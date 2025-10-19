@@ -375,7 +375,7 @@
 
 /* 닫힘 상태에서의 부드러운 전환 */
 .compactPost {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .compactPost.expanded {
@@ -384,7 +384,7 @@
 
 /* 닫힘 애니메이션 상태 관리 */
 .compactPost.closing .expandedContent {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp 1s cubic-bezier(0.4, 0, 0.2, 1);
   animation-fill-mode: forwards;
 }
 
@@ -395,7 +395,7 @@
 
 /* 드롭다운이 닫힐 때 부드러운 전환 */
 .compactPost:not(.expanded) .expandedContent {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp 1s cubic-bezier(0.4, 0, 0.2, 1);
   animation-fill-mode: forwards;
 }
 

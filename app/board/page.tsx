@@ -94,7 +94,7 @@ export default function Board() {
             const element = document.getElementById(`post-${postId}`);
             if (element) {
               const elementTop = element.offsetTop;
-              const offset = 20;
+              const offset = 80; // 제목 부분까지 보이도록 더 많은 여백
               
               window.scrollTo({
                 top: elementTop - offset,
@@ -102,7 +102,7 @@ export default function Board() {
               });
             }
           }, 100);
-        }, 500); // 닫힘 애니메이션 시간 (500ms)
+        }, 1000); // 닫힘 애니메이션 시간 (1초)
       } else {
         // 기존 드롭이 없는 경우 바로 열기
         setExpandedPosts(new Set([postId]));
@@ -113,7 +113,7 @@ export default function Board() {
           const element = document.getElementById(`post-${postId}`);
           if (element) {
             const elementTop = element.offsetTop;
-            const offset = 20;
+            const offset = 80; // 제목 부분까지 보이도록 더 많은 여백
             
             window.scrollTo({
               top: elementTop - offset,
