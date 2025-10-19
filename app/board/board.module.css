@@ -269,7 +269,7 @@
   border-radius: 8px;
   overflow: hidden;
   transition: box-shadow 0.3s ease;
-  margin-bottom: 1.5rem; /* 항목 간격 넓히기: 1rem → 1.5rem */
+  margin-bottom: 2px; /* 항목 간격 2px로 줄이기 */
 }
 
 .compactPost:hover {
