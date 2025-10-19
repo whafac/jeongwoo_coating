@@ -92,8 +92,8 @@
   position: fixed;
   top: 0;
   right: -100%;
-  width: 70%;
-  max-width: 300px;
+  width: 50%; /* 화면폭의 50%로 제한 */
+  max-width: 250px; /* 최대 폭도 줄임: 300px → 250px */
   height: 100vh;
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   padding: 1rem 0;
@@ -179,7 +179,8 @@
   }
 
   .mobileMenu {
-    width: 75%;
+    width: 50%; /* 화면폭의 50%로 제한 */
+    max-width: 250px; /* 최대 폭 제한 */
   }
 
   .logo {
@@ -189,7 +190,8 @@
 
 @media (max-width: 480px) {
   .mobileMenu {
-    width: 85%;
+    width: 50%; /* 화면폭의 50%로 제한 */
+    max-width: 220px; /* 작은 화면에서도 최대 폭 제한 */
   }
 
   .logo {
