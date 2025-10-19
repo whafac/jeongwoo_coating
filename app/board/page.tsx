@@ -225,9 +225,6 @@ export default function Board() {
                       onClick={() => togglePostExpansion(post.id)}
                     >
                       <div className={styles.postInfo}>
-                        <span className={`${styles.status} ${styles[post.status]}`}>
-                          {post.status === 'pending' ? '승인 대기' : '승인됨'}
-                        </span>
                         <h3 className={styles.postTitle}>{post.title}</h3>
                       </div>
                       <div className={styles.postMeta}>
@@ -251,15 +248,6 @@ export default function Board() {
                         <div className={styles.commentsSection}>
                           <div className={styles.commentsHeader}>
                             <h4>대화 내용</h4>
-                            <button 
-                              className={styles.replyBtn}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleReplyForm(post.id);
-                              }}
-                            >
-                              추가 문의하기
-                            </button>
                           </div>
                           
                           {/* 댓글 목록 */}
@@ -297,6 +285,19 @@ export default function Board() {
                           ) : (
                             <p className={styles.noComments}>아직 답변이 없습니다.</p>
                           )}
+                          
+                          {/* 추가 문의 버튼 - 대화 맨 아래 */}
+                          <div className={styles.replyButtonSection}>
+                            <button 
+                              className={styles.replyBtn}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReplyForm(post.id);
+                              }}
+                            >
+                              추가 문의하기
+                            </button>
+                          </div>
                           
                           {/* 추가 문의 폼 */}
                           {showReplyForm[post.id] && (

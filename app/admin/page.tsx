@@ -195,8 +195,8 @@ export default function AdminPage() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'pending': return '대기';
-      case 'approved': return '승인';
-      case 'rejected': return '거부';
+      case 'approved': return '공개';
+      case 'rejected': return '숨김';
       default: return status;
     }
   };
@@ -249,13 +249,13 @@ export default function AdminPage() {
               className={`${styles.tab} ${activeTab === 'pending' ? styles.active : ''}`}
               onClick={() => setActiveTab('pending')}
             >
-              승인 대기 ({posts.filter(p => p.status === 'pending').length})
+              대기 ({posts.filter(p => p.status === 'pending').length})
             </button>
             <button 
               className={`${styles.tab} ${activeTab === 'approved' ? styles.active : ''}`}
               onClick={() => setActiveTab('approved')}
             >
-              승인됨
+              공개됨
             </button>
             <button 
               className={`${styles.tab} ${activeTab === 'rejected' ? styles.active : ''}`}
@@ -297,7 +297,7 @@ export default function AdminPage() {
                             className={`${styles.actionBtn} ${styles.approve}`}
                             onClick={() => updatePostStatus(post.id, 'approved')}
                           >
-                            승인
+                            공개
                           </button>
                           <button 
                             className={`${styles.actionBtn} ${styles.reject}`}
