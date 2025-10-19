@@ -13,11 +13,21 @@ interface Post {
   created_at: string;
 }
 
+interface Reply {
+  id: string;
+  post_id: string;
+  admin_name: string;
+  content: string;
+  created_at: string;
+}
+
 
 export default function Board() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'inquiry' | 'review'>('inquiry');
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+  const [postReplies, setPostReplies] = useState<Record<string, Reply[]>>({});
 
   useEffect(() => {
     fetchPosts();
@@ -42,6 +52,32 @@ export default function Board() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const fetchReplies = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/replies?postId=${postId}`);
+      const data = await response.json();
+      setPostReplies(prev => ({
+        ...prev,
+        [postId]: data
+      }));
+    } catch (error) {
+      console.error('Error fetching replies:', error);
+    }
+  };
+
+  const togglePostExpansion = async (postId: string) => {
+    const newExpandedPosts = new Set(expandedPosts);
+    
+    if (expandedPosts.has(postId)) {
+      newExpandedPosts.delete(postId);
+    } else {
+      newExpandedPosts.add(postId);
+      await fetchReplies(postId);
+    }
+    
+    setExpandedPosts(newExpandedPosts);
   };
 
   return (
@@ -94,10 +130,38 @@ export default function Board() {
                   </div>
                   <div className={styles.postFooter}>
                     <span className={styles.author}>작성자: {post.user_name}</span>
-                    <Link href={`/board/${post.id}`} className="btn btn-secondary">
-                      자세히 보기
-                    </Link>
+                    <div className={styles.postActions}>
+                      <button 
+                        className={styles.replyToggleBtn}
+                        onClick={() => togglePostExpansion(post.id)}
+                      >
+                        {expandedPosts.has(post.id) ? '답글 숨기기' : '답글 보기'}
+                      </button>
+                      <Link href={`/board/${post.id}`} className="btn btn-secondary">
+                        자세히 보기
+                      </Link>
+                    </div>
                   </div>
+                  
+                  {/* 답글 표시 영역 */}
+                  {expandedPosts.has(post.id) && (
+                    <div className={styles.repliesSection}>
+                      <h4>관리자 답변</h4>
+                      {postReplies[post.id] && postReplies[post.id].length > 0 ? (
+                        postReplies[post.id].map((reply) => (
+                          <div key={reply.id} className={styles.replyItem}>
+                            <div className={styles.replyHeader}>
+                              <span className={styles.replyAuthor}>{reply.admin_name}</span>
+                              <span className={styles.replyDate}>{formatDate(reply.created_at)}</span>
+                            </div>
+                            <div className={styles.replyContent}>{reply.content}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className={styles.noReplies}>아직 답변이 없습니다.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}

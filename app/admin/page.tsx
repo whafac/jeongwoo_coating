@@ -15,11 +15,23 @@ interface Post {
   created_at: string;
 }
 
+interface Reply {
+  id: string;
+  post_id: string;
+  admin_name: string;
+  content: string;
+  created_at: string;
+}
+
 export default function AdminPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [message, setMessage] = useState('');
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [newReply, setNewReply] = useState('');
+  const [showReplyModal, setShowReplyModal] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -83,6 +95,85 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error deleting post:', error);
       setMessage('❌ 오류가 발생했습니다.');
+    }
+  };
+
+  const fetchReplies = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/replies?postId=${postId}`);
+      const data = await response.json();
+      setReplies(data);
+    } catch (error) {
+      console.error('Error fetching replies:', error);
+    }
+  };
+
+  const openReplyModal = async (post: Post) => {
+    setSelectedPost(post);
+    await fetchReplies(post.id);
+    setShowReplyModal(true);
+  };
+
+  const closeReplyModal = () => {
+    setShowReplyModal(false);
+    setSelectedPost(null);
+    setReplies([]);
+    setNewReply('');
+  };
+
+  const submitReply = async () => {
+    if (!selectedPost || !newReply.trim()) return;
+
+    try {
+      const response = await fetch('/api/replies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId: selectedPost.id,
+          content: newReply,
+          adminName: '관리자'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create reply');
+      }
+
+      const result = await response.json();
+      setMessage('✅ ' + result.message);
+      setTimeout(() => setMessage(''), 3000);
+      setNewReply('');
+      await fetchReplies(selectedPost.id);
+    } catch (error) {
+      console.error('Error creating reply:', error);
+      setMessage('❌ 답글 작성 중 오류가 발생했습니다.');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const deleteReply = async (replyId: string) => {
+    if (!confirm('답글을 삭제하시겠습니까?')) return;
+
+    try {
+      const response = await fetch(`/api/replies/${replyId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete reply');
+      }
+
+      setMessage('✅ 답글이 삭제되었습니다.');
+      setTimeout(() => setMessage(''), 3000);
+      if (selectedPost) {
+        await fetchReplies(selectedPost.id);
+      }
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+      setMessage('❌ 답글 삭제 중 오류가 발생했습니다.');
+      setTimeout(() => setMessage(''), 3000);
     }
   };
 
@@ -212,6 +303,12 @@ export default function AdminPage() {
                         </>
                       )}
                       <button 
+                        className={`${styles.actionBtn} ${styles.reply}`}
+                        onClick={() => openReplyModal(post)}
+                      >
+                        답글
+                      </button>
+                      <button 
                         className={`${styles.actionBtn} ${styles.delete}`}
                         onClick={() => deletePost(post.id)}
                       >
@@ -241,6 +338,75 @@ export default function AdminPage() {
           </div>
         </div>
       </section>
+
+      {/* Reply Modal */}
+      {showReplyModal && selectedPost && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h2>답글 작성</h2>
+              <button className={styles.closeBtn} onClick={closeReplyModal}>×</button>
+            </div>
+            
+            <div className={styles.modalContent}>
+              <div className={styles.postInfo}>
+                <h3>{selectedPost.title}</h3>
+                <p><strong>작성자:</strong> {selectedPost.user_name} ({selectedPost.user_email})</p>
+                <p><strong>내용:</strong> {selectedPost.content}</p>
+              </div>
+
+              <div className={styles.existingReplies}>
+                <h4>기존 답글</h4>
+                {replies.length === 0 ? (
+                  <p>아직 답글이 없습니다.</p>
+                ) : (
+                  replies.map((reply) => (
+                    <div key={reply.id} className={styles.replyItem}>
+                      <div className={styles.replyHeader}>
+                        <span className={styles.replyAuthor}>{reply.admin_name}</span>
+                        <span className={styles.replyDate}>{formatDate(reply.created_at)}</span>
+                        <button 
+                          className={styles.deleteReplyBtn}
+                          onClick={() => deleteReply(reply.id)}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                      <div className={styles.replyContent}>{reply.content}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className={styles.replyForm}>
+                <h4>새 답글 작성</h4>
+                <textarea
+                  value={newReply}
+                  onChange={(e) => setNewReply(e.target.value)}
+                  placeholder="답글을 입력하세요..."
+                  className={styles.replyTextarea}
+                  rows={4}
+                />
+                <div className={styles.replyActions}>
+                  <button 
+                    className={`${styles.actionBtn} ${styles.submit}`}
+                    onClick={submitReply}
+                    disabled={!newReply.trim()}
+                  >
+                    답글 작성
+                  </button>
+                  <button 
+                    className={`${styles.actionBtn} ${styles.cancel}`}
+                    onClick={closeReplyModal}
+                  >
+                    취소
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

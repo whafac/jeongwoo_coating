@@ -147,3 +147,78 @@
     font-size: 1rem;
   }
 }
+
+/* 답글 관련 스타일 */
+.postActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.replyToggleBtn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.replyToggleBtn:hover {
+  background: #138496;
+}
+
+.repliesSection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.repliesSection h4 {
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.replyItem {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #17a2b8;
+}
+
+.replyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.replyAuthor {
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.replyDate {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.replyContent {
+  color: #495057;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.noReplies {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
