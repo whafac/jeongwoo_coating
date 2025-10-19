@@ -7,18 +7,33 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const result = await db.execute(`
-      SELECT p.*, u.name as user_name, u.email as user_email, u.phone as user_phone
-      FROM posts p
-      LEFT JOIN users u ON p.user_id = u.id
-      WHERE p.id = ? AND p.status = 'approved'
-    `, [params.id]);
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        users!posts_user_id_fkey (
+          name,
+          email,
+          phone
+        )
+      `)
+      .eq('id', params.id)
+      .eq('status', 'approved')
+      .single();
     
-    if (result.rows.length === 0) {
+    if (error || !posts) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
     
-    return NextResponse.json(result.rows[0]);
+    // 데이터 형식 변환
+    const formattedPost = {
+      ...posts,
+      user_name: posts.users?.name,
+      user_email: posts.users?.email,
+      user_phone: posts.users?.phone
+    };
+    
+    return NextResponse.json(formattedPost);
   } catch (error) {
     console.error('Error fetching post:', error);
     return NextResponse.json({ error: 'Failed to fetch post' }, { status: 500 });
@@ -32,7 +47,12 @@ export async function DELETE(
 ) {
   try {
     // 실제로는 관리자 인증 확인 필요
-    await db.execute('DELETE FROM posts WHERE id = ?', [params.id]);
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', params.id);
+    
+    if (error) throw error;
     
     return NextResponse.json({ success: true });
   } catch (error) {

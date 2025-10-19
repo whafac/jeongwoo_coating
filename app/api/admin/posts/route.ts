@@ -23,9 +23,30 @@ export async function GET(request: NextRequest) {
     
     query += ' ORDER BY p.created_at DESC';
     
-    const result = await db.execute(query, params);
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        users!posts_user_id_fkey (
+          name,
+          email,
+          phone
+        )
+      `)
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false });
     
-    return NextResponse.json(result.rows);
+    if (error) throw error;
+    
+    // 데이터 형식 변환
+    const formattedPosts = posts?.map(post => ({
+      ...post,
+      user_name: post.users?.name,
+      user_email: post.users?.email,
+      user_phone: post.users?.phone
+    })) || [];
+    
+    return NextResponse.json(formattedPosts);
   } catch (error) {
     console.error('Error fetching admin posts:', error);
     return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
@@ -42,10 +63,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
     
-    await db.execute(
-      'UPDATE posts SET status = ?, updated_at = NOW() WHERE id = ?',
-      [status, postId]
-    );
+    const { error } = await supabase
+      .from('posts')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', postId);
+    
+    if (error) throw error;
     
     return NextResponse.json({ 
       success: true, 
@@ -67,7 +90,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Post ID required' }, { status: 400 });
     }
     
-    await db.execute('DELETE FROM posts WHERE id = ?', [postId]);
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId);
+    
+    if (error) throw error;
     
     return NextResponse.json({ 
       success: true, 
