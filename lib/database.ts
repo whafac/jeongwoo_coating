@@ -1,16 +1,10 @@
-import { connect } from '@planetscale/database';
+import { createClient } from '@supabase/supabase-js';
 
-// PlanetScale 데이터베이스 연결 설정
-// 실제 배포 시에는 환경변수로 설정
-const config = {
-  host: process.env.DATABASE_HOST || 'localhost',
-  username: process.env.DATABASE_USERNAME || 'root',
-  password: process.env.DATABASE_PASSWORD || '',
-  // PlanetScale에서는 ssl: true 필요
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-};
+// Supabase 데이터베이스 연결 설정
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const db = connect(config);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 데이터베이스 스키마 타입 정의
 export interface User {
