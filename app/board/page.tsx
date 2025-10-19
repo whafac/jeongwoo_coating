@@ -224,15 +224,18 @@ export default function Board() {
                       className={styles.postSummary}
                       onClick={() => togglePostExpansion(post.id)}
                     >
-                      <div className={styles.postInfo}>
+                      {/* 제목 (상단) */}
+                      <div className={styles.postTitleRow}>
                         <h3 className={styles.postTitle}>{post.title}</h3>
-                      </div>
-                      <div className={styles.postMeta}>
-                        <span className={styles.author}>{post.user_name}</span>
-                        <span className={styles.date}>{formatDate(post.created_at)}</span>
                         <span className={styles.expandIcon}>
                           {expandedPosts.has(post.id) ? '▼' : '▶'}
                         </span>
+                      </div>
+                      
+                      {/* 작성자/날짜 (하단 우측) */}
+                      <div className={styles.postMeta}>
+                        <span className={styles.author}>{post.user_name}</span>
+                        <span className={styles.date}>{formatDate(post.created_at)}</span>
                       </div>
                     </div>
                     
