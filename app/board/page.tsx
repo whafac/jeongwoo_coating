@@ -14,12 +14,16 @@ interface Post {
   created_at: string;
 }
 
-interface Reply {
+interface Comment {
   id: string;
   post_id: string;
-  admin_name: string;
+  parent_id?: string;
+  author_type: 'admin' | 'customer';
+  author_name: string;
+  author_email?: string;
   content: string;
   created_at: string;
+  replies: Comment[];
 }
 
 
@@ -28,7 +32,8 @@ export default function Board() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'inquiry' | 'review'>('inquiry');
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
-  const [postReplies, setPostReplies] = useState<Record<string, Reply[]>>({});
+  const [postComments, setPostComments] = useState<Record<string, Comment[]>>({});
+  const [showReplyForm, setShowReplyForm] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchPosts();
@@ -55,16 +60,16 @@ export default function Board() {
     });
   };
 
-  const fetchReplies = async (postId: string) => {
+  const fetchComments = async (postId: string) => {
     try {
-      const response = await fetch(`/api/replies?postId=${postId}`);
+      const response = await fetch(`/api/comments?postId=${postId}`);
       const data = await response.json();
-      setPostReplies(prev => ({
+      setPostComments(prev => ({
         ...prev,
         [postId]: data
       }));
     } catch (error) {
-      console.error('Error fetching replies:', error);
+      console.error('Error fetching comments:', error);
     }
   };
 
@@ -75,10 +80,47 @@ export default function Board() {
       newExpandedPosts.delete(postId);
     } else {
       newExpandedPosts.add(postId);
-      await fetchReplies(postId);
+      await fetchComments(postId);
     }
     
     setExpandedPosts(newExpandedPosts);
+  };
+
+  const toggleReplyForm = (postId: string) => {
+    setShowReplyForm(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const submitReply = async (postId: string, content: string, userName: string, userEmail: string) => {
+    try {
+      const response = await fetch('/api/comments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId,
+          authorType: 'customer',
+          authorName: userName,
+          authorEmail: userEmail,
+          content
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create reply');
+      }
+
+      const result = await response.json();
+      alert(result.message);
+      await fetchComments(postId);
+      setShowReplyForm(prev => ({ ...prev, [postId]: false }));
+    } catch (error) {
+      console.error('Error creating reply:', error);
+      alert('답글 작성 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -120,56 +162,142 @@ export default function Board() {
                 <p>첫 번째 {activeTab === 'inquiry' ? '문의' : '후기'}를 작성해보세요!</p>
               </div>
             ) : (
-              posts.map((post) => (
-                <div key={post.id} className="card">
-                  <div className={styles.postHeader}>
-                    <div className={styles.postTitleSection}>
-                      <h3>{post.title}</h3>
-                      <span className={`${styles.status} ${styles[post.status]}`}>
-                        {post.status === 'pending' ? '승인 대기' : '승인됨'}
-                      </span>
+              <div className={styles.compactBoard}>
+                {posts.map((post) => (
+                  <div key={post.id} className={styles.compactPost}>
+                    {/* 컴팩트한 게시글 헤더 */}
+                    <div 
+                      className={styles.postSummary}
+                      onClick={() => togglePostExpansion(post.id)}
+                    >
+                      <div className={styles.postInfo}>
+                        <span className={`${styles.status} ${styles[post.status]}`}>
+                          {post.status === 'pending' ? '승인 대기' : '승인됨'}
+                        </span>
+                        <h3 className={styles.postTitle}>{post.title}</h3>
+                      </div>
+                      <div className={styles.postMeta}>
+                        <span className={styles.author}>{post.user_name}</span>
+                        <span className={styles.date}>{formatDate(post.created_at)}</span>
+                        <span className={styles.expandIcon}>
+                          {expandedPosts.has(post.id) ? '▼' : '▶'}
+                        </span>
+                      </div>
                     </div>
-                    <span className={styles.date}>{formatDate(post.created_at)}</span>
-                  </div>
-                  <div className={styles.postContent}>
-                    <p>{post.content}</p>
-                  </div>
-                  <div className={styles.postFooter}>
-                    <span className={styles.author}>작성자: {post.user_name}</span>
-                    <div className={styles.postActions}>
-                      <button 
-                        className={styles.replyToggleBtn}
-                        onClick={() => togglePostExpansion(post.id)}
-                      >
-                        {expandedPosts.has(post.id) ? '답글 숨기기' : '답글 보기'}
-                      </button>
-                      <Link href={`/board/${post.id}`} className="btn btn-secondary">
-                        자세히 보기
-                      </Link>
-                    </div>
-                  </div>
-                  
-                  {/* 답글 표시 영역 */}
-                  {expandedPosts.has(post.id) && (
-                    <div className={styles.repliesSection}>
-                      <h4>관리자 답변</h4>
-                      {postReplies[post.id] && postReplies[post.id].length > 0 ? (
-                        postReplies[post.id].map((reply) => (
-                          <div key={reply.id} className={styles.replyItem}>
-                            <div className={styles.replyHeader}>
-                              <span className={styles.replyAuthor}>{reply.admin_name}</span>
-                              <span className={styles.replyDate}>{formatDate(reply.created_at)}</span>
-                            </div>
-                            <div className={styles.replyContent}>{reply.content}</div>
+                    
+                    {/* 드롭다운 내용 영역 */}
+                    {expandedPosts.has(post.id) && (
+                      <div className={styles.expandedContent}>
+                        <div className={styles.postContent}>
+                          <h4>문의 내용:</h4>
+                          <p>{post.content}</p>
+                        </div>
+                        
+                        {/* 댓글/답글 영역 */}
+                        <div className={styles.commentsSection}>
+                          <div className={styles.commentsHeader}>
+                            <h4>대화 내용</h4>
+                            <button 
+                              className={styles.replyBtn}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReplyForm(post.id);
+                              }}
+                            >
+                              추가 문의하기
+                            </button>
                           </div>
-                        ))
-                      ) : (
-                        <p className={styles.noReplies}>아직 답변이 없습니다.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))
+                          
+                          {/* 댓글 목록 */}
+                          {postComments[post.id] && postComments[post.id].length > 0 ? (
+                            <div className={styles.commentsList}>
+                              {postComments[post.id].map((comment) => (
+                                <div key={comment.id} className={styles.commentItem}>
+                                  <div className={styles.commentHeader}>
+                                    <span className={`${styles.commentAuthor} ${styles[comment.author_type]}`}>
+                                      {comment.author_type === 'admin' ? '👨‍💼 관리자' : '👤 고객'}
+                                    </span>
+                                    <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
+                                  </div>
+                                  <div className={styles.commentContent}>{comment.content}</div>
+                                  
+                                  {/* 대댓글 */}
+                                  {comment.replies && comment.replies.length > 0 && (
+                                    <div className={styles.repliesList}>
+                                      {comment.replies.map((reply) => (
+                                        <div key={reply.id} className={`${styles.commentItem} ${styles.replyItem}`}>
+                                          <div className={styles.commentHeader}>
+                                            <span className={`${styles.commentAuthor} ${styles[reply.author_type]}`}>
+                                              {reply.author_type === 'admin' ? '👨‍💼 관리자' : '👤 고객'}
+                                            </span>
+                                            <span className={styles.commentDate}>{formatDate(reply.created_at)}</span>
+                                          </div>
+                                          <div className={styles.commentContent}>{reply.content}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className={styles.noComments}>아직 답변이 없습니다.</p>
+                          )}
+                          
+                          {/* 추가 문의 폼 */}
+                          {showReplyForm[post.id] && (
+                            <div className={styles.replyForm}>
+                              <h5>추가 문의 작성</h5>
+                              <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.target as HTMLFormElement);
+                                const content = formData.get('content') as string;
+                                const userName = formData.get('userName') as string;
+                                const userEmail = formData.get('userEmail') as string;
+                                if (content && userName && userEmail) {
+                                  submitReply(post.id, content, userName, userEmail);
+                                }
+                              }}>
+                                <input 
+                                  type="text" 
+                                  name="userName" 
+                                  placeholder="이름" 
+                                  required 
+                                  className={styles.inputField}
+                                />
+                                <input 
+                                  type="email" 
+                                  name="userEmail" 
+                                  placeholder="이메일" 
+                                  required 
+                                  className={styles.inputField}
+                                />
+                                <textarea 
+                                  name="content" 
+                                  placeholder="추가 문의 내용을 입력하세요..."
+                                  required 
+                                  className={styles.textareaField}
+                                  rows={3}
+                                />
+                                <div className={styles.formActions}>
+                                  <button type="submit" className={styles.submitBtn}>문의 등록</button>
+                                  <button 
+                                    type="button" 
+                                    className={styles.cancelBtn}
+                                    onClick={() => toggleReplyForm(post.id)}
+                                  >
+                                    취소
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 

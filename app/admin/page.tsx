@@ -15,12 +15,16 @@ interface Post {
   created_at: string;
 }
 
-interface Reply {
+interface Comment {
   id: string;
   post_id: string;
-  admin_name: string;
+  parent_id?: string;
+  author_type: 'admin' | 'customer';
+  author_name: string;
+  author_email?: string;
   content: string;
   created_at: string;
+  replies: Comment[];
 }
 
 export default function AdminPage() {
@@ -29,8 +33,8 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [message, setMessage] = useState('');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [replies, setReplies] = useState<Reply[]>([]);
-  const [newReply, setNewReply] = useState('');
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
 
   useEffect(() => {
@@ -98,81 +102,82 @@ export default function AdminPage() {
     }
   };
 
-  const fetchReplies = async (postId: string) => {
+  const fetchComments = async (postId: string) => {
     try {
-      const response = await fetch(`/api/replies?postId=${postId}`);
+      const response = await fetch(`/api/comments?postId=${postId}`);
       const data = await response.json();
-      setReplies(data);
+      setComments(data);
     } catch (error) {
-      console.error('Error fetching replies:', error);
+      console.error('Error fetching comments:', error);
     }
   };
 
   const openReplyModal = async (post: Post) => {
     setSelectedPost(post);
-    await fetchReplies(post.id);
+    await fetchComments(post.id);
     setShowReplyModal(true);
   };
 
   const closeReplyModal = () => {
     setShowReplyModal(false);
     setSelectedPost(null);
-    setReplies([]);
-    setNewReply('');
+    setComments([]);
+    setNewComment('');
   };
 
-  const submitReply = async () => {
-    if (!selectedPost || !newReply.trim()) return;
+  const submitComment = async () => {
+    if (!selectedPost || !newComment.trim()) return;
 
     try {
-      const response = await fetch('/api/replies', {
+      const response = await fetch('/api/comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           postId: selectedPost.id,
-          content: newReply,
-          adminName: '관리자'
+          authorType: 'admin',
+          authorName: '관리자',
+          content: newComment
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create reply');
+        throw new Error('Failed to create comment');
       }
 
       const result = await response.json();
       setMessage('✅ ' + result.message);
       setTimeout(() => setMessage(''), 3000);
-      setNewReply('');
-      await fetchReplies(selectedPost.id);
+      setNewComment('');
+      await fetchComments(selectedPost.id);
     } catch (error) {
-      console.error('Error creating reply:', error);
+      console.error('Error creating comment:', error);
       setMessage('❌ 답글 작성 중 오류가 발생했습니다.');
       setTimeout(() => setMessage(''), 3000);
     }
   };
 
-  const deleteReply = async (replyId: string) => {
-    if (!confirm('답글을 삭제하시겠습니까?')) return;
+  const deleteComment = async (commentId: string) => {
+    if (!confirm('댓글을 삭제하시겠습니까?')) return;
 
     try {
-      const response = await fetch(`/api/replies/${replyId}`, {
+      const response = await fetch(`/api/comments/${commentId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete reply');
+        throw new Error('Failed to delete comment');
       }
 
-      setMessage('✅ 답글이 삭제되었습니다.');
+      setMessage('✅ 댓글이 삭제되었습니다.');
       setTimeout(() => setMessage(''), 3000);
       if (selectedPost) {
-        await fetchReplies(selectedPost.id);
+        await fetchComments(selectedPost.id);
       }
     } catch (error) {
-      console.error('Error deleting reply:', error);
-      setMessage('❌ 답글 삭제 중 오류가 발생했습니다.');
+      console.error('Error deleting comment:', error);
+      setMessage('❌ 댓글 삭제 중 오류가 발생했습니다.');
       setTimeout(() => setMessage(''), 3000);
     }
   };
@@ -336,7 +341,7 @@ export default function AdminPage() {
                         className={styles.replyCountBtn}
                         onClick={() => openReplyModal(post)}
                       >
-                        답글 {replies.length}개
+                        댓글 {comments.length}개
                       </button>
                     </div>
                   </div>
@@ -364,33 +369,60 @@ export default function AdminPage() {
               </div>
 
               <div className={styles.existingReplies}>
-                <h4>기존 답글</h4>
-                {replies.length === 0 ? (
-                  <p>아직 답글이 없습니다.</p>
+                <h4>대화 내용</h4>
+                {comments.length === 0 ? (
+                  <p>아직 댓글이 없습니다.</p>
                 ) : (
-                  replies.map((reply) => (
-                    <div key={reply.id} className={styles.replyItem}>
-                      <div className={styles.replyHeader}>
-                        <span className={styles.replyAuthor}>{reply.admin_name}</span>
-                        <span className={styles.replyDate}>{formatDate(reply.created_at)}</span>
-                        <button 
-                          className={styles.deleteReplyBtn}
-                          onClick={() => deleteReply(reply.id)}
-                        >
-                          삭제
-                        </button>
+                  <div className={styles.commentsList}>
+                    {comments.map((comment) => (
+                      <div key={comment.id} className={styles.commentItem}>
+                        <div className={styles.commentHeader}>
+                          <span className={`${styles.commentAuthor} ${styles[comment.author_type]}`}>
+                            {comment.author_type === 'admin' ? '👨‍💼 관리자' : '👤 고객'}
+                          </span>
+                          <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
+                          <button 
+                            className={styles.deleteReplyBtn}
+                            onClick={() => deleteComment(comment.id)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                        <div className={styles.commentContent}>{comment.content}</div>
+                        
+                        {/* 대댓글 */}
+                        {comment.replies && comment.replies.length > 0 && (
+                          <div className={styles.repliesList}>
+                            {comment.replies.map((reply) => (
+                              <div key={reply.id} className={`${styles.commentItem} ${styles.replyItem}`}>
+                                <div className={styles.commentHeader}>
+                                  <span className={`${styles.commentAuthor} ${styles[reply.author_type]}`}>
+                                    {reply.author_type === 'admin' ? '👨‍💼 관리자' : '👤 고객'}
+                                  </span>
+                                  <span className={styles.commentDate}>{formatDate(reply.created_at)}</span>
+                                  <button 
+                                    className={styles.deleteReplyBtn}
+                                    onClick={() => deleteComment(reply.id)}
+                                  >
+                                    삭제
+                                  </button>
+                                </div>
+                                <div className={styles.commentContent}>{reply.content}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className={styles.replyContent}>{reply.content}</div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </div>
 
               <div className={styles.replyForm}>
                 <h4>새 답글 작성</h4>
                 <textarea
-                  value={newReply}
-                  onChange={(e) => setNewReply(e.target.value)}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
                   placeholder="답글을 입력하세요..."
                   className={styles.replyTextarea}
                   rows={4}
@@ -398,8 +430,8 @@ export default function AdminPage() {
                 <div className={styles.replyActions}>
                   <button 
                     className={`${styles.actionBtn} ${styles.submit}`}
-                    onClick={submitReply}
-                    disabled={!newReply.trim()}
+                    onClick={submitComment}
+                    disabled={!newComment.trim()}
                   >
                     답글 작성
                   </button>
