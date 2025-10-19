@@ -82,6 +82,21 @@ export default function Board() {
       // 다른 모든 항목을 닫고 선택한 항목만 열기
       setExpandedPosts(new Set([postId]));
       await fetchComments(postId);
+      
+      // 새로 열린 드롭 위치로 부드럽게 스크롤
+      setTimeout(() => {
+        const element = document.getElementById(`post-${postId}`);
+        if (element) {
+          // 요소의 상단에서 약간의 여백을 두고 스크롤
+          const elementTop = element.offsetTop;
+          const offset = 20; // 상단에서 20px 여백
+          
+          window.scrollTo({
+            top: elementTop - offset,
+            behavior: 'smooth'
+          });
+        }
+      }, 150); // 애니메이션이 시작된 후 스크롤
     }
   };
 
@@ -163,7 +178,11 @@ export default function Board() {
             ) : (
               <div className={styles.compactBoard}>
                 {posts.map((post) => (
-                  <div key={post.id} className={`${styles.compactPost} ${expandedPosts.has(post.id) ? styles.expanded : ''}`}>
+                  <div 
+                    key={post.id} 
+                    id={`post-${post.id}`}
+                    className={`${styles.compactPost} ${expandedPosts.has(post.id) ? styles.expanded : ''}`}
+                  >
                     {/* 컴팩트한 게시글 헤더 */}
                     <div 
                       className={styles.postSummary}
