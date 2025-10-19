@@ -86,11 +86,11 @@ export default function Board() {
         console.log('닫기 완료:', postId);
         setExpandedPosts(new Set());
         setClosingPosts(new Set());
-      }, 1000);
+      }, 500);
     } else {
       // 다른 드롭이 열려있는 경우 순차적으로 처리
       if (expandedPosts.size > 0) {
-        // 1단계: 먼저 기존 드롭 닫기 (1초 애니메이션)
+        // 1단계: 먼저 기존 드롭 닫기 (0.5초 애니메이션)
         const currentExpanded = Array.from(expandedPosts)[0];
         setClosingPosts(new Set([currentExpanded]));
         
@@ -113,7 +113,7 @@ export default function Board() {
               });
             }
           }, 100);
-        }, 1000); // 닫힘 애니메이션 시간 (1초)
+        }, 500); // 닫힘 애니메이션 시간 (0.5초)
       } else {
         // 기존 드롭이 없는 경우 바로 열기
         setExpandedPosts(new Set([postId]));
