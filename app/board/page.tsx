@@ -13,10 +13,6 @@ interface Post {
   created_at: string;
 }
 
-export const metadata = {
-  title: '문의 게시판 - 정우특수코팅',
-  description: '정우특수코팅에 문의하거나 후기를 남겨보세요',
-};
 
 export default function Board() {
   const [posts, setPosts] = useState<Post[]>([]);

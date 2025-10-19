@@ -1,10 +1,6 @@
 import Link from 'next/link';
 import styles from './process.module.css';
 
-export const metadata = {
-  title: '작업 프로세스 - 정우특수코팅',
-  description: '체계적이고 투명한 작업 과정으로 최상의 결과를 보장합니다',
-};
 
 export default function Process() {
   return (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { supabase } from '@/lib/database';
 
 // 관리자용 게시글 목록 조회 (승인 대기 포함)
 export async function GET(request: NextRequest) {

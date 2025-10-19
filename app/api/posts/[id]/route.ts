@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { supabase } from '@/lib/database';
 
 // 특정 게시글 조회
 export async function GET(

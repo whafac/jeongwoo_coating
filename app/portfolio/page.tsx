@@ -1,10 +1,6 @@
 import Link from 'next/link';
 import styles from './portfolio.module.css';
 
-export const metadata = {
-  title: '작업 사례 - 정우특수코팅',
-  description: '정우특수코팅의 다양한 코팅 작업 사례를 확인하세요',
-};
 
 export default function Portfolio() {
   const portfolioItems = [

@@ -1,10 +1,6 @@
 import Link from 'next/link';
 import styles from './about.module.css';
 
-export const metadata = {
-  title: '회사소개 - 정우특수코팅',
-  description: '정우특수코팅은 20년 이상의 경험으로 최고의 인쇄코팅 후가공을 제공합니다',
-};
 
 export default function About() {
   return (

@@ -1,10 +1,6 @@
 import Link from 'next/link';
 import styles from './services.module.css';
 
-export const metadata = {
-  title: '코팅 서비스 - 정우특수코팅',
-  description: 'UV코팅, 라미네이팅, 박 코팅, 형압 가공 등 다양한 인쇄코팅 후가공 서비스',
-};
 
 export default function Services() {
   return (
