@@ -320,7 +320,7 @@
   padding: 1.5rem;
   background: white;
   border-top: 1px solid #e9ecef;
-  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideDown 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   overflow: hidden;
   transform-origin: top;
 }
@@ -347,35 +347,30 @@
 }
 
 @keyframes slideUp {
-  0% {
+  from {
     max-height: 1000px;
     opacity: 1;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
     transform: scaleY(1);
-    visibility: visible;
   }
-  50% {
-    max-height: 200px;
-    opacity: 0.5;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    transform: scaleY(0.5);
-    visibility: visible;
-  }
-  100% {
+  to {
     max-height: 0;
     opacity: 0;
     padding-top: 0;
     padding-bottom: 0;
     transform: scaleY(0);
-    visibility: hidden;
   }
 }
 
 /* 닫힘 상태에서의 부드러운 전환 */
 .compactPost {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 닫힘 중일 때 부드러운 전환 */
+.compactPost.closing {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .compactPost.expanded {
@@ -389,14 +384,14 @@
 
 /* 드롭다운이 닫힐 때 부드러운 전환 */
 .compactPost.closing .expandedContent {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  animation-fill-mode: forwards !important;
-  display: block !important; /* 애니메이션 중에는 표시 */
-  max-height: 1000px !important; /* 애니메이션 시작 높이 */
+  animation: slideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  animation-fill-mode: forwards;
+  display: block;
+  transform-origin: top;
 }
 
 .compactPost:not(.expanded):not(.closing) .expandedContent {
-  display: none !important;
+  display: none;
 }
 
 .commentsSection {
