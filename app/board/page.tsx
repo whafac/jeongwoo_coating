@@ -79,24 +79,49 @@ export default function Board() {
       // 이미 열려있는 경우 닫기
       setExpandedPosts(new Set());
     } else {
-      // 다른 모든 항목을 닫고 선택한 항목만 열기
-      setExpandedPosts(new Set([postId]));
-      await fetchComments(postId);
-      
-      // 새로 열린 드롭 위치로 부드럽게 스크롤
-      setTimeout(() => {
-        const element = document.getElementById(`post-${postId}`);
-        if (element) {
-          // 요소의 상단에서 약간의 여백을 두고 스크롤
-          const elementTop = element.offsetTop;
-          const offset = 20; // 상단에서 20px 여백
+      // 다른 드롭이 열려있는 경우 순차적으로 처리
+      if (expandedPosts.size > 0) {
+        // 1단계: 먼저 기존 드롭 닫기 (빠르게)
+        setExpandedPosts(new Set());
+        
+        // 2단계: 닫힘 애니메이션 완료 후 새 드롭 열기
+        setTimeout(async () => {
+          setExpandedPosts(new Set([postId]));
+          await fetchComments(postId);
           
-          window.scrollTo({
-            top: elementTop - offset,
-            behavior: 'smooth'
-          });
-        }
-      }, 150); // 애니메이션이 시작된 후 스크롤
+          // 3단계: 새로 열린 드롭 위치로 부드럽게 스크롤
+          setTimeout(() => {
+            const element = document.getElementById(`post-${postId}`);
+            if (element) {
+              const elementTop = element.offsetTop;
+              const offset = 20;
+              
+              window.scrollTo({
+                top: elementTop - offset,
+                behavior: 'smooth'
+              });
+            }
+          }, 100);
+        }, 250); // 닫힘 애니메이션 시간 (250ms)
+      } else {
+        // 기존 드롭이 없는 경우 바로 열기
+        setExpandedPosts(new Set([postId]));
+        await fetchComments(postId);
+        
+        // 새로 열린 드롭 위치로 부드럽게 스크롤
+        setTimeout(() => {
+          const element = document.getElementById(`post-${postId}`);
+          if (element) {
+            const elementTop = element.offsetTop;
+            const offset = 20;
+            
+            window.scrollTo({
+              top: elementTop - offset,
+              behavior: 'smooth'
+            });
+          }
+        }, 150);
+      }
     }
   };
 

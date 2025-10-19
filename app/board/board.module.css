@@ -320,13 +320,13 @@
   padding: 1.5rem;
   background: white;
   border-top: 1px solid #e9ecef;
-  animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   transform-origin: top;
 }
 
 .compactPost.closing .expandedContent {
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideDown {
@@ -361,6 +361,20 @@
     padding-bottom: 0;
     transform: scaleY(0);
   }
+}
+
+/* 닫힘 상태에서의 부드러운 전환 */
+.compactPost {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.compactPost.expanded {
+  transform: translateY(0);
+}
+
+/* 드롭다운이 닫힐 때 부드러운 전환 */
+.compactPost:not(.expanded) .expandedContent {
+  display: none;
 }
 
 .commentsSection {
