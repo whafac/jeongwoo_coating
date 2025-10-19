@@ -84,7 +84,7 @@ phpunit
 # Composer
 #-------------------------
 vendor/
-composer.lock
+# composer.lock - Required for deployment, do not ignore
 
 #-------------------------
 # IDE Files
