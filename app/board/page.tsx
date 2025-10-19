@@ -9,6 +9,7 @@ interface Post {
   title: string;
   content: string;
   category: string;
+  status: string;
   user_name: string;
   created_at: string;
 }
@@ -122,7 +123,12 @@ export default function Board() {
               posts.map((post) => (
                 <div key={post.id} className="card">
                   <div className={styles.postHeader}>
-                    <h3>{post.title}</h3>
+                    <div className={styles.postTitleSection}>
+                      <h3>{post.title}</h3>
+                      <span className={`${styles.status} ${styles[post.status]}`}>
+                        {post.status === 'pending' ? '승인 대기' : '승인됨'}
+                      </span>
+                    </div>
                     <span className={styles.date}>{formatDate(post.created_at)}</span>
                   </div>
                   <div className={styles.postContent}>

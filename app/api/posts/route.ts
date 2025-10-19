@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       `)
       .eq('company_id', companyId)
       .eq('category', category)
-      .eq('status', 'approved')
+      .in('status', ['approved', 'pending'])
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         title,
         content,
         category,
-        status: 'pending'
+        status: 'approved'
       })
       .select('id')
       .single();

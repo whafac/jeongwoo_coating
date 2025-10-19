@@ -331,6 +331,14 @@ export default function AdminPage() {
                       <span><strong>이메일:</strong> {post.user_email}</span>
                       {post.user_phone && <span><strong>연락처:</strong> {post.user_phone}</span>}
                     </div>
+                    <div className={styles.replyStatus}>
+                      <button 
+                        className={styles.replyCountBtn}
+                        onClick={() => openReplyModal(post)}
+                      >
+                        답글 {replies.length}개
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))

@@ -440,3 +440,22 @@
 .cancel:hover {
   background: #5a6268;
 }
+
+/* 답글 상태 표시 */
+.replyStatus {
+  margin-top: 1rem;
+}
+
+.replyCountBtn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.replyCountBtn:hover {
+  background: #5a6268;
+}
