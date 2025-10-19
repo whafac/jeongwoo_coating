@@ -309,12 +309,34 @@
   font-weight: bold;
   color: var(--primary-color);
   font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.compactPost.expanded .expandIcon {
+  transform: rotate(90deg);
 }
 
 .expandedContent {
   padding: 1.5rem;
   background: white;
   border-top: 1px solid #e9ecef;
+  animation: slideDown 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
 }
 
 .commentsSection {
