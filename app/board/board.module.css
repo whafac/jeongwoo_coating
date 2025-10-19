@@ -347,34 +347,56 @@
 }
 
 @keyframes slideUp {
-  from {
+  0% {
     max-height: 1000px;
     opacity: 1;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
     transform: scaleY(1);
+    display: block;
   }
-  to {
+  90% {
+    max-height: 50px;
+    opacity: 0.1;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    transform: scaleY(0.1);
+    display: block;
+  }
+  100% {
     max-height: 0;
     opacity: 0;
     padding-top: 0;
     padding-bottom: 0;
     transform: scaleY(0);
+    display: none;
   }
 }
 
 /* 닫힘 상태에서의 부드러운 전환 */
 .compactPost {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .compactPost.expanded {
   transform: translateY(0);
 }
 
+/* 닫힘 애니메이션 상태 관리 */
+.compactPost.closing .expandedContent {
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+
+/* 드롭다운 내용의 기본 상태 */
+.expandedContent {
+  overflow: hidden;
+}
+
 /* 드롭다운이 닫힐 때 부드러운 전환 */
 .compactPost:not(.expanded) .expandedContent {
-  display: none;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: forwards;
 }
 
 .commentsSection {

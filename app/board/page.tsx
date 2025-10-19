@@ -102,7 +102,7 @@ export default function Board() {
               });
             }
           }, 100);
-        }, 250); // 닫힘 애니메이션 시간 (250ms)
+        }, 500); // 닫힘 애니메이션 시간 (500ms)
       } else {
         // 기존 드롭이 없는 경우 바로 열기
         setExpandedPosts(new Set([postId]));
