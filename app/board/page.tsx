@@ -78,11 +78,13 @@ export default function Board() {
     // 아코디언 방식: 한 번에 하나만 열기
     if (expandedPosts.has(postId)) {
       // 이미 열려있는 경우 닫기
+      console.log('닫기 시작:', postId);
       setClosingPosts(new Set([postId]));
-      setExpandedPosts(new Set());
       
-      // 닫힘 애니메이션 완료 후 closing 상태 제거
+      // 닫힘 애니메이션 완료 후 상태 정리
       setTimeout(() => {
+        console.log('닫기 완료:', postId);
+        setExpandedPosts(new Set());
         setClosingPosts(new Set());
       }, 1000);
     } else {
@@ -91,12 +93,11 @@ export default function Board() {
         // 1단계: 먼저 기존 드롭 닫기 (1초 애니메이션)
         const currentExpanded = Array.from(expandedPosts)[0];
         setClosingPosts(new Set([currentExpanded]));
-        setExpandedPosts(new Set());
         
         // 2단계: 닫힘 애니메이션 완료 후 새 드롭 열기
         setTimeout(async () => {
-          setClosingPosts(new Set());
           setExpandedPosts(new Set([postId]));
+          setClosingPosts(new Set());
           await fetchComments(postId);
           
           // 3단계: 새로 열린 드롭 위치로 부드럽게 스크롤

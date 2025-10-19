@@ -353,20 +353,31 @@
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
     transform: scaleY(1);
+    visibility: visible;
+  }
+  25% {
+    max-height: 750px;
+    opacity: 0.8;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    transform: scaleY(0.8);
+    visibility: visible;
   }
   50% {
-    max-height: 200px;
-    opacity: 0.5;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    transform: scaleY(0.5);
+    max-height: 400px;
+    opacity: 0.6;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    transform: scaleY(0.6);
+    visibility: visible;
   }
-  90% {
-    max-height: 20px;
-    opacity: 0.1;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    transform: scaleY(0.1);
+  75% {
+    max-height: 150px;
+    opacity: 0.3;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    transform: scaleY(0.3);
+    visibility: visible;
   }
   100% {
     max-height: 0;
@@ -394,13 +405,14 @@
 
 /* 드롭다운이 닫힐 때 부드러운 전환 */
 .compactPost.closing .expandedContent {
-  animation: slideUp 1s cubic-bezier(0.4, 0, 0.2, 1);
-  animation-fill-mode: forwards;
-  display: block; /* 애니메이션 중에는 표시 */
+  animation: slideUp 1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  animation-fill-mode: forwards !important;
+  display: block !important; /* 애니메이션 중에는 표시 */
+  max-height: 1000px !important; /* 애니메이션 시작 높이 */
 }
 
 .compactPost:not(.expanded):not(.closing) .expandedContent {
-  display: none;
+  display: none !important;
 }
 
 .commentsSection {
