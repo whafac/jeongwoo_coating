@@ -30,6 +30,7 @@ export default function Header() {
               <li><Link href="/process">작업프로세스</Link></li>
               <li><Link href="/portfolio">작업사례</Link></li>
               <li><Link href="/about">회사소개</Link></li>
+              <li><Link href="/board">게시판</Link></li>
               <li><Link href="/contact">문의하기</Link></li>
             </ul>
             <div className={`${styles.hamburger} ${isMenuOpen ? styles.active : ''}`} onClick={toggleMenu}>
@@ -50,6 +51,7 @@ export default function Header() {
           <li><Link href="/process" onClick={closeMenu}>작업프로세스</Link></li>
           <li><Link href="/portfolio" onClick={closeMenu}>작업사례</Link></li>
           <li><Link href="/about" onClick={closeMenu}>회사소개</Link></li>
+          <li><Link href="/board" onClick={closeMenu}>게시판</Link></li>
           <li><Link href="/contact" onClick={closeMenu}>문의하기</Link></li>
         </ul>
       </div>

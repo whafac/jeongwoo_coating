@@ -18,8 +18,10 @@
 
 - ✅ 반응형 웹 디자인 (모바일, 태블릿, 데스크톱)
 - ✅ 햄버거 메뉴 (모바일 768px 이하)
-- ✅ 6개 페이지 (홈, 코팅서비스, 작업프로세스, 작업사례, 회사소개, 문의하기)
-- ✅ 문의 폼 (향후 백엔드 API 연결 가능)
+- ✅ 7개 페이지 (홈, 코팅서비스, 작업프로세스, 작업사례, 회사소개, 게시판, 문의하기)
+- ✅ **게시판 기능** (문의/후기 작성, 조회, 관리)
+- ✅ **관리자 페이지** (게시글 승인/거부/삭제)
+- ✅ **PlanetScale 데이터베이스** 연동
 - ✅ SEO 최적화
 - ✅ 빠른 로딩 속도
 
@@ -30,6 +32,8 @@
 - **작업프로세스** (`/process`): 4단계 작업 과정 안내
 - **작업사례** (`/portfolio`): 포트폴리오 및 실적
 - **회사소개** (`/about`): 회사 정보, 비전, 미션
+- **게시판** (`/board`): 문의/후기 게시판
+- **관리자** (`/admin`): 게시글 관리 (승인/거부/삭제)
 - **문의하기** (`/contact`): 온라인 문의 폼
 
 ## 🛠️ 로컬 개발
@@ -37,12 +41,17 @@
 ### 요구사항
 - Node.js 18.18.0 이상
 - npm 또는 yarn
+- PlanetScale 계정 (게시판 기능용)
 
 ### 설치 및 실행
 
 ```bash
 # 의존성 설치
 npm install
+
+# 환경 변수 설정
+cp .env.example .env.local
+# .env.local 파일에서 PlanetScale 데이터베이스 정보 설정
 
 # 개발 서버 실행
 npm run dev
@@ -117,28 +126,38 @@ git push
 
 Vercel이 자동으로 재배포합니다! (30초 소요)
 
-## 💡 향후 개발
+## 💡 게시판 기능 설정
 
-### 문의 폼 백엔드 연결
+### 1. PlanetScale 데이터베이스 설정
 
-문의 폼을 실제로 작동시키려면:
+1. **PlanetScale 가입**: https://planetscale.com
+2. **새 프로젝트 생성**: "jeongwoo-coating" 
+3. **데이터베이스 생성**: `database-schema.sql` 실행
+4. **연결 정보 복사**: Host, Username, Password
 
-**옵션 1: Next.js API Routes**
-```typescript
-// app/api/contact/route.ts
-export async function POST(request: Request) {
-  const data = await request.json();
-  // 데이터베이스 저장 또는 이메일 발송
-  return Response.json({ success: true });
-}
+### 2. 환경 변수 설정
+
+```bash
+# .env.local 파일 생성
+DATABASE_HOST=your-database-host.planetscale.com
+DATABASE_USERNAME=your-username
+DATABASE_PASSWORD=your-password
 ```
 
-**옵션 2: Firebase/Supabase 연동**
-- 무료 백엔드 서비스 사용
-- 실시간 데이터베이스
+### 3. 게시판 기능
 
-**옵션 3: 이메일 서비스**
-- SendGrid, Mailgun 등 연동
+- ✅ **문의 게시판**: 고객 문의 작성/조회
+- ✅ **후기 게시판**: 작업 후기 작성/조회
+- ✅ **관리자 페이지**: 게시글 승인/거부/삭제
+- ✅ **실시간 업데이트**: 게시글 상태 변경
+
+### 4. 향후 확장
+
+**다른 업체 추가 시:**
+```sql
+INSERT INTO companies (id, name, domain) VALUES 
+('company2', '새 업체', 'company2.vercel.app');
+```
 
 ## 📝 커스터마이징
 

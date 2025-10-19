@@ -1,0 +1,106 @@
+.pageHeader {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: var(--white);
+  padding: 5rem 0 4rem;
+  text-align: center;
+}
+
+.pageHeader h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.pageHeader p {
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  opacity: 0.95;
+}
+
+.successMessage {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 1rem 1.5rem;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.formContainer {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form {
+  background: var(--white);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formGroup label {
+  display: block;
+  color: var(--primary-color);
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(44, 95, 141, 0.2);
+}
+
+.formGroup textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+.formActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.formActions .btn {
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .pageHeader h1 {
+    font-size: 2rem;
+  }
+  
+  .form {
+    padding: 1.5rem;
+  }
+  
+  .formActions {
+    flex-direction: column;
+  }
+  
+  .formActions .btn {
+    width: 100%;
+  }
+}
