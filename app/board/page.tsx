@@ -34,6 +34,7 @@ export default function Board() {
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const [postComments, setPostComments] = useState<Record<string, Comment[]>>({});
   const [showReplyForm, setShowReplyForm] = useState<Record<string, boolean>>({});
+  const [closingPosts, setClosingPosts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchPosts();
@@ -77,15 +78,24 @@ export default function Board() {
     // 아코디언 방식: 한 번에 하나만 열기
     if (expandedPosts.has(postId)) {
       // 이미 열려있는 경우 닫기
+      setClosingPosts(new Set([postId]));
       setExpandedPosts(new Set());
+      
+      // 닫힘 애니메이션 완료 후 closing 상태 제거
+      setTimeout(() => {
+        setClosingPosts(new Set());
+      }, 1000);
     } else {
       // 다른 드롭이 열려있는 경우 순차적으로 처리
       if (expandedPosts.size > 0) {
-        // 1단계: 먼저 기존 드롭 닫기 (빠르게)
+        // 1단계: 먼저 기존 드롭 닫기 (1초 애니메이션)
+        const currentExpanded = Array.from(expandedPosts)[0];
+        setClosingPosts(new Set([currentExpanded]));
         setExpandedPosts(new Set());
         
         // 2단계: 닫힘 애니메이션 완료 후 새 드롭 열기
         setTimeout(async () => {
+          setClosingPosts(new Set());
           setExpandedPosts(new Set([postId]));
           await fetchComments(postId);
           
@@ -206,7 +216,7 @@ export default function Board() {
                   <div 
                     key={post.id} 
                     id={`post-${post.id}`}
-                    className={`${styles.compactPost} ${expandedPosts.has(post.id) ? styles.expanded : ''}`}
+                    className={`${styles.compactPost} ${expandedPosts.has(post.id) ? styles.expanded : ''} ${closingPosts.has(post.id) ? styles.closing : ''}`}
                   >
                     {/* 컴팩트한 게시글 헤더 */}
                     <div 
