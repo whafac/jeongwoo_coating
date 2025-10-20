@@ -253,7 +253,7 @@
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e0e0e0;
-  text-align: center;
+  text-align: right; /* 중앙에서 우측 끝으로 변경 */
 }
 
 /* 컴팩트한 게시판 스타일 */
