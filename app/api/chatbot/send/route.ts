@@ -169,8 +169,8 @@ async function searchKnowledgeBase(query: string): Promise<string | null> {
     // 점수 순으로 정렬
     scoredItems.sort((a, b) => b.score - a.score);
 
-    // 최고 점수 항목 반환 (임계값 30점 이상)
-    const bestMatch = scoredItems.find(item => item.score >= 30);
+    // 최고 점수 항목 반환 (임계값을 낮춤: 30점 → 10점)
+    const bestMatch = scoredItems.find(item => item.score >= 10);
     
     if (bestMatch) {
       // 사용 횟수 증가
@@ -181,7 +181,18 @@ async function searchKnowledgeBase(query: string): Promise<string | null> {
       
       return bestMatch.content;
     }
-
+    
+    // 점수가 낮아도 상위 3개 항목 중 하나라도 매칭되면 반환
+    const topMatches = scoredItems.slice(0, 3);
+    if (topMatches.length > 0 && topMatches[0].score > 0) {
+      await supabase
+        .from('chatbot_knowledge_base')
+        .update({ usage_count: topMatches[0].usage_count + 1 })
+        .eq('id', topMatches[0].id);
+      
+      return topMatches[0].content;
+    }
+    
     return null;
   } catch (error) {
     console.error('지식베이스 검색 오류:', error);
@@ -214,32 +225,43 @@ function extractKeywords(query: string): string[] {
 function generateBasicResponse(query: string): string {
   const queryLower = query.toLowerCase();
   
+  // 정우특수코팅 기본 정보
+  const companyInfo = `정우특수코팅은 1999년 설립된 인쇄코팅 후가공 전문 기업입니다. 20년 이상의 경험과 노하우를 바탕으로 최고의 서비스를 제공하고 있습니다.`;
+  
   // 질문 유형별 맞춤 응답
   if (queryLower.includes('견적') || queryLower.includes('가격') || queryLower.includes('비용')) {
-    return '견적 문의를 원하시는군요! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다.';
+    return `${companyInfo}\n\n견적 문의를 원하시는군요! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다.`;
   }
   
   if (queryLower.includes('시간') || queryLower.includes('소요') || queryLower.includes('납기')) {
-    return '작업 소요시간에 대해 문의하시는군요! 일반적인 코팅 작업은 1-3일 소요되며, 작업량과 난이도에 따라 달라집니다. 긴급 작업의 경우 별도 상담을 통해 가능합니다.';
+    return `${companyInfo}\n\n작업 소요시간에 대해 문의하시는군요! 일반적인 코팅 작업은 1-3일 소요되며, 작업량과 난이도에 따라 달라집니다. 긴급 작업의 경우 별도 상담을 통해 가능합니다.`;
   }
   
   if (queryLower.includes('파일') || queryLower.includes('형식') || queryLower.includes('제출')) {
-    return '파일 형식에 대해 문의하시는군요! PDF, AI, EPS 형식을 권장하며, 해상도는 300DPI 이상이어야 합니다. 코팅 영역은 별도 레이어로 표시해 주시고, 컬러는 CMYK 모드로 변환해 주세요.';
+    return `${companyInfo}\n\n파일 형식에 대해 문의하시는군요! PDF, AI, EPS 형식을 권장하며, 해상도는 300DPI 이상이어야 합니다. 코팅 영역은 별도 레이어로 표시해 주시고, 컬러는 CMYK 모드로 변환해 주세요.`;
   }
   
   if (queryLower.includes('주문') || queryLower.includes('최소') || queryLower.includes('수량')) {
-    return '주문량에 대해 문의하시는군요! 최소 주문량은 없으며 소량 주문도 환영합니다. 다만 소량 주문의 경우 단가가 높을 수 있으니 사전 상담을 권장합니다.';
+    return `${companyInfo}\n\n주문량에 대해 문의하시는군요! 최소 주문량은 없으며 소량 주문도 환영합니다. 다만 소량 주문의 경우 단가가 높을 수 있으니 사전 상담을 권장합니다.`;
   }
   
   if (queryLower.includes('연락처') || queryLower.includes('전화') || queryLower.includes('연락')) {
-    return '연락처 정보를 원하시는군요! 정우특수코팅은 전화(02-1234-5678), 이메일, 온라인 문의 폼을 통해 연락 가능합니다. 무료 상담 서비스를 제공하니 언제든 연락해 주세요.';
+    return `${companyInfo}\n\n연락처 정보를 원하시는군요! 정우특수코팅은 전화(02-1234-5678), 이메일, 온라인 문의 폼을 통해 연락 가능합니다. 무료 상담 서비스를 제공하니 언제든 연락해 주세요.`;
+  }
+  
+  if (queryLower.includes('서비스') || queryLower.includes('코팅') || queryLower.includes('작업')) {
+    return `${companyInfo}\n\n정우특수코팅의 주요 서비스는 다음과 같습니다:\n• UV 코팅 - 빠른 건조와 뛰어난 광택감\n• 라미네이팅 - 유광, 무광, 벨벳 등 다양한 필름\n• 박 코팅 - 금박, 은박, 홀로그램 등\n• 형압 가공 - 양각, 음각으로 입체 효과\n\n더 자세한 정보는 전화(02-1234-5678)로 문의해 주세요.`;
+  }
+  
+  if (queryLower.includes('무엇') || queryLower.includes('뭐') || queryLower.includes('일') || queryLower.includes('업무')) {
+    return `${companyInfo}\n\n저는 정우특수코팅의 챗봇입니다! 다음과 같은 도움을 드릴 수 있습니다:\n• 코팅 서비스 안내\n• 견적 문의 방법\n• 작업 프로세스 설명\n• 파일 제출 방법\n• 연락처 안내\n\n궁금한 것이 있으시면 언제든 물어보세요!`;
   }
   
   // 일반적인 응답
   const responses = [
-    '좋은 질문입니다! 해당 내용에 대해 더 정확한 정보를 확인한 후 답변드리겠습니다. 정우특수코팅 담당자에게 직접 문의하시면 더 자세한 안내를 받으실 수 있습니다.',
-    '정우특수코팅의 전문 지식을 바탕으로 최선의 답변을 드리기 위해 학습 중입니다. 전화(02-1234-5678) 또는 온라인 문의를 통해 더 정확한 정보를 얻으실 수 있습니다.',
-    '해당 질문에 대해 정확한 답변을 찾지 못했습니다. 정우특수코팅의 다양한 코팅 서비스(UV코팅, 라미네이팅, 박코팅, 형압)에 대해 더 구체적으로 질문해 주시거나, 직접 문의해 주세요.'
+    `${companyInfo}\n\n좋은 질문입니다! 해당 내용에 대해 더 정확한 정보를 확인한 후 답변드리겠습니다. 정우특수코팅 담당자에게 직접 문의하시면 더 자세한 안내를 받으실 수 있습니다.`,
+    `${companyInfo}\n\n정우특수코팅의 전문 지식을 바탕으로 최선의 답변을 드리기 위해 학습 중입니다. 전화(02-1234-5678) 또는 온라인 문의를 통해 더 정확한 정보를 얻으실 수 있습니다.`,
+    `${companyInfo}\n\n해당 질문에 대해 정확한 답변을 찾지 못했습니다. 정우특수코팅의 다양한 코팅 서비스(UV코팅, 라미네이팅, 박코팅, 형압)에 대해 더 구체적으로 질문해 주시거나, 직접 문의해 주세요.`
   ];
   
   return responses[Math.floor(Math.random() * responses.length)];
