@@ -143,6 +143,17 @@
   text-align: left;
 }
 
+.aiIndicator {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
 /* 타이핑 인디케이터 */
 .typingIndicator {
   display: flex;

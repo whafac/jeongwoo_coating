@@ -9,6 +9,7 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   isLoading?: boolean;
+  aiGenerated?: boolean;
 }
 
 export default function Chatbot() {
@@ -70,7 +71,8 @@ export default function Chatbot() {
           id: (Date.now() + 1).toString(),
           text: data.message,
           isUser: false,
-          timestamp: new Date()
+          timestamp: new Date(),
+          aiGenerated: data.aiUsed || false
         };
         setMessages(prev => [...prev, botMessage]);
       } else {
@@ -138,6 +140,9 @@ export default function Chatbot() {
                 <div className={styles.messageContent}>
                   <div className={styles.messageText}>
                     {message.text}
+                    {message.aiGenerated && (
+                      <span className={styles.aiIndicator}>🤖 AI</span>
+                    )}
                   </div>
                   <div className={styles.messageTime}>
                     {message.timestamp.toLocaleTimeString('ko-KR', {

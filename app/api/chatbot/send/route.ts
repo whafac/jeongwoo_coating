@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/database';
+import { generateChatbotResponse, calculateTokenUsage, calculateCost } from '@/lib/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,11 +19,73 @@ export async function POST(request: NextRequest) {
     // 2단계: 대화 기록 저장
     await saveChatMessage(sessionToken, 'user', message);
     
-    // 3단계: 응답 생성 (현재는 기본 응답, 나중에 AI API 연동)
-    let botResponse = knowledgeResponse || generateBasicResponse(message);
+    // 3단계: 대화 기록 가져오기
+    const conversationHistory = await getConversationHistory(sessionToken);
     
-    // 4단계: 봇 응답 저장
-    await saveChatMessage(sessionToken, 'bot', botResponse);
+    // 4단계: AI 응답 생성 (지식베이스 + AI 조합)
+    let botResponse: string;
+    let aiUsed = false;
+    let tokensUsed = 0;
+    let costUsd = 0;
+    
+    if (knowledgeResponse) {
+      // 지식베이스에서 답변을 찾은 경우, AI로 보완
+      try {
+        const aiResponse = await generateChatbotResponse(
+          `지식베이스 답변: ${knowledgeResponse}\n\n사용자 질문: ${message}\n\n위 지식베이스 답변을 바탕으로 사용자의 질문에 더 친근하고 구체적으로 답변해 주세요.`,
+          knowledgeResponse,
+          conversationHistory
+        );
+        
+        botResponse = aiResponse;
+        aiUsed = true;
+        
+        // 토큰 사용량 계산
+        const inputTokens = calculateTokenUsage([
+          { role: 'user', content: message },
+          ...conversationHistory
+        ]);
+        const outputTokens = calculateTokenUsage([{ role: 'assistant', content: aiResponse }]);
+        tokensUsed = inputTokens + outputTokens;
+        costUsd = calculateCost(inputTokens, outputTokens);
+        
+      } catch (aiError) {
+        console.error('AI 응답 생성 실패:', aiError);
+        botResponse = knowledgeResponse; // AI 실패 시 지식베이스 답변 사용
+      }
+    } else {
+      // 지식베이스에서 답변을 찾지 못한 경우, AI로 직접 응답
+      try {
+        const context = await getCompanyContext();
+        botResponse = await generateChatbotResponse(
+          message,
+          context,
+          conversationHistory
+        );
+        
+        aiUsed = true;
+        
+        // 토큰 사용량 계산
+        const inputTokens = calculateTokenUsage([
+          { role: 'user', content: message },
+          ...conversationHistory
+        ]);
+        const outputTokens = calculateTokenUsage([{ role: 'assistant', content: botResponse }]);
+        tokensUsed = inputTokens + outputTokens;
+        costUsd = calculateCost(inputTokens, outputTokens);
+        
+      } catch (aiError) {
+        console.error('AI 응답 생성 실패:', aiError);
+        botResponse = generateBasicResponse(message); // AI 실패 시 기본 응답 사용
+      }
+    }
+    
+    // 5단계: 봇 응답 저장 (AI 사용 정보 포함)
+    await saveChatMessage(sessionToken, 'bot', botResponse, {
+      ai_used: aiUsed,
+      tokens_used: tokensUsed,
+      cost_usd: costUsd
+    });
 
     return NextResponse.json({
       message: botResponse,
@@ -182,8 +245,67 @@ function generateBasicResponse(query: string): string {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
-// 대화 메시지 저장 함수
-async function saveChatMessage(sessionToken: string, messageType: string, content: string) {
+// 대화 기록 가져오기 함수
+async function getConversationHistory(sessionToken: string): Promise<Array<{role: 'user' | 'assistant', content: string}>> {
+  try {
+    const { data: session } = await supabase
+      .from('chatbot_sessions')
+      .select('id')
+      .eq('session_token', sessionToken)
+      .eq('is_active', true)
+      .single();
+
+    if (!session) return [];
+
+    const { data: messages } = await supabase
+      .from('chatbot_messages')
+      .select('message_type, content')
+      .eq('session_id', session.id)
+      .order('created_at', { ascending: true })
+      .limit(10); // 최근 10개 메시지만
+
+    if (!messages) return [];
+
+    return messages.map(msg => ({
+      role: msg.message_type === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    }));
+  } catch (error) {
+    console.error('대화 기록 가져오기 오류:', error);
+    return [];
+  }
+}
+
+// 회사 컨텍스트 가져오기 함수
+async function getCompanyContext(): Promise<string> {
+  try {
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('company_code', 'jeongwoo')
+      .single();
+
+    if (!company) return process.env.CHATBOT_COMPANY_CONTEXT || '';
+
+    const { data: knowledge } = await supabase
+      .from('chatbot_knowledge_base')
+      .select('title, content, category')
+      .eq('company_id', company.id)
+      .eq('is_active', true)
+      .order('priority', { ascending: false })
+      .limit(5); // 상위 5개 항목만
+
+    if (!knowledge) return process.env.CHATBOT_COMPANY_CONTEXT || '';
+
+    return knowledge.map(item => `${item.title}: ${item.content}`).join('\n\n');
+  } catch (error) {
+    console.error('회사 컨텍스트 가져오기 오류:', error);
+    return process.env.CHATBOT_COMPANY_CONTEXT || '';
+  }
+}
+
+// 대화 메시지 저장 함수 (메타데이터 포함)
+async function saveChatMessage(sessionToken: string, messageType: string, content: string, metadata: any = {}) {
   try {
     // 세션 찾기 또는 생성
     let { data: session } = await supabase
@@ -219,13 +341,14 @@ async function saveChatMessage(sessionToken: string, messageType: string, conten
 
     if (!session) return;
 
-    // 메시지 저장
+    // 메시지 저장 (메타데이터 포함)
     await supabase
       .from('chatbot_messages')
       .insert({
         session_id: session.id,
         message_type: messageType,
-        content: content
+        content: content,
+        metadata: metadata
       });
 
   } catch (error) {
