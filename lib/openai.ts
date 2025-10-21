@@ -1,9 +1,11 @@
 import OpenAI from 'openai';
 
-// OpenAI 클라이언트 초기화
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// OpenAI 클라이언트 초기화 (환경 변수 체크)
+export const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  : null;
 
 // 챗봇 응답 생성 함수
 export async function generateChatbotResponse(
@@ -11,6 +13,11 @@ export async function generateChatbotResponse(
   context: string,
   conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = []
 ): Promise<string> {
+  // OpenAI API 키가 없는 경우 기본 응답 반환
+  if (!openai) {
+    return '죄송합니다. AI 서비스가 일시적으로 사용할 수 없습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+  }
+  
   try {
     const systemPrompt = `당신은 정우특수코팅의 전문 챗봇입니다. 
     

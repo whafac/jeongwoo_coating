@@ -3,9 +3,10 @@ import { supabase } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const companyCode = searchParams.get('company') || 'jeongwoo';
-    const period = searchParams.get('period') || '7'; // 기본 7일
+    // 동적 서버 사용을 명시적으로 표시
+    const url = new URL(request.url);
+    const companyCode = url.searchParams.get('company') || 'jeongwoo';
+    const period = url.searchParams.get('period') || '7'; // 기본 7일
 
     // 회사 ID 가져오기
     const { data: company } = await supabase
