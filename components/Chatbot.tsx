@@ -10,6 +10,7 @@ interface Message {
   timestamp: Date;
   isLoading?: boolean;
   aiGenerated?: boolean;
+  feedbackSubmitted?: boolean;
 }
 
 export default function Chatbot() {
@@ -24,6 +25,7 @@ export default function Chatbot() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -103,6 +105,39 @@ export default function Chatbot() {
     setIsOpen(!isOpen);
   };
 
+  const handleFeedback = async (messageId: string, feedback: 'helpful' | 'not_helpful' | 'neutral') => {
+    setFeedbackSubmitting(messageId);
+    
+    try {
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const response = await fetch('/api/chatbot/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messageId,
+          feedback,
+          sessionToken
+        }),
+      });
+
+      if (response.ok) {
+        // 피드백 제출 완료 표시
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, feedbackSubmitted: true }
+            : msg
+        ));
+      }
+    } catch (error) {
+      console.error('피드백 제출 오류:', error);
+    } finally {
+      setFeedbackSubmitting(null);
+    }
+  };
+
   return (
     <>
       {/* 챗봇 토글 버튼 */}
@@ -150,6 +185,43 @@ export default function Chatbot() {
                       minute: '2-digit'
                     })}
                   </div>
+                  
+                  {/* 피드백 버튼 (봇 메시지에만 표시) */}
+                  {!message.isUser && !message.feedbackSubmitted && (
+                    <div className={styles.feedbackSection}>
+                      <span className={styles.feedbackLabel}>이 답변이 도움이 되었나요?</span>
+                      <div className={styles.feedbackButtons}>
+                        <button
+                          className={`${styles.feedbackBtn} ${styles.helpful}`}
+                          onClick={() => handleFeedback(message.id, 'helpful')}
+                          disabled={feedbackSubmitting === message.id}
+                        >
+                          👍 도움됨
+                        </button>
+                        <button
+                          className={`${styles.feedbackBtn} ${styles.neutral}`}
+                          onClick={() => handleFeedback(message.id, 'neutral')}
+                          disabled={feedbackSubmitting === message.id}
+                        >
+                          😐 보통
+                        </button>
+                        <button
+                          className={`${styles.feedbackBtn} ${styles.notHelpful}`}
+                          onClick={() => handleFeedback(message.id, 'not_helpful')}
+                          disabled={feedbackSubmitting === message.id}
+                        >
+                          👎 도움안됨
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 피드백 제출 완료 표시 */}
+                  {!message.isUser && message.feedbackSubmitted && (
+                    <div className={styles.feedbackSubmitted}>
+                      <span>피드백을 주셔서 감사합니다! 🙏</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
