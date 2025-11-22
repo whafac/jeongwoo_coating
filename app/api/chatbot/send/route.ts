@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/database';
-import { generateChatbotResponse, calculateTokenUsage, calculateCost } from '@/lib/openai';
+import { generateChatbotResponse, calculateTokenUsage, calculateCost, generateQuoteResponse } from '@/lib/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
         
       } catch (aiError) {
         console.error('AI 응답 생성 실패:', aiError);
-        botResponse = generateBasicResponse(message); // AI 실패 시 기본 응답 사용
+        // 견적 문의인 경우 견적 기본 답변 사용
+        botResponse = isQuote ? generateQuoteResponse(message) : generateBasicResponse(message);
       }
     }
     
