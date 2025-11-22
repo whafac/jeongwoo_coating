@@ -105,22 +105,25 @@
 
 .botMessage {
   justify-content: flex-start;
+  width: 100%;
 }
 
 .messageContent {
-  max-width: 80%;
   padding: 12px 16px;
   border-radius: 18px;
   position: relative;
 }
 
 .userMessage .messageContent {
+  max-width: 80%;
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
   border-bottom-right-radius: 6px;
 }
 
 .botMessage .messageContent {
+  width: 100%;
+  max-width: 100%;
   background: white;
   color: #333;
   border: 1px solid #e0e0e0;
