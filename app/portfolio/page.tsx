@@ -23,6 +23,45 @@ export default function Portfolio() {
     '복합 작업': 'var(--accent-light)',
   };
 
+  const categoryInfo: Record<string, { emoji: string, gradient: string, description: string }> = {
+    'UV 코팅': {
+      emoji: '✨',
+      gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      description: '자외선(UV)으로 경화시키는 코팅 방식'
+    },
+    '라미네이팅': {
+      emoji: '📄',
+      gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      description: '필름을 인쇄물 표면에 부착하여 보호하는 후가공'
+    },
+    '박 코팅': {
+      emoji: '🌟',
+      gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+      description: '금속 박막을 인쇄물에 전사하여 화려한 효과 연출'
+    },
+    '형압': {
+      emoji: '🎨',
+      gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      description: '압력을 가하여 인쇄물에 입체적인 효과'
+    },
+    '복합 작업': {
+      emoji: '📇',
+      gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+      description: '여러 가지 코팅 기법을 조합한 완성도 높은 마감'
+    },
+  };
+
+  // 카테고리별로 그룹화
+  const categoryGroups: Record<string, typeof portfolioItems> = {};
+  portfolioItems.forEach(item => {
+    if (!categoryGroups[item.category]) {
+      categoryGroups[item.category] = [];
+    }
+    categoryGroups[item.category].push(item);
+  });
+
+  const categories = Object.keys(categoryGroups);
+
   return (
     <>
       {/* Page Header */}
@@ -33,25 +72,52 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* Portfolio Grid */}
+      {/* Category Sections */}
       <section className="section">
         <div className="container">
-          <div className={styles.portfolioGrid}>
-            {portfolioItems.map((item, index) => (
-              <div key={index} className="card" style={{padding: 0, overflow: 'hidden'}}>
-                <div style={{height: '250px', background: item.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '3rem'}}>
-                  {item.emoji}
-                </div>
-                <div style={{padding: '1.5rem'}}>
-                  <div className={styles.categoryBadge} style={{background: categoryColors[item.category] || 'var(--primary-color)'}}>
-                    {item.category}
+          {categories.map((category) => {
+            const items = categoryGroups[category];
+            const info = categoryInfo[category];
+            const categorySlug = encodeURIComponent(category);
+            
+            return (
+              <div key={category} className={styles.categorySection}>
+                <div className={styles.categoryHeader}>
+                  <div className={styles.categoryHeaderContent}>
+                    <div className={styles.categoryIcon}>{info.emoji}</div>
+                    <div>
+                      <h2>{category}</h2>
+                      <p>{info.description}</p>
+                    </div>
                   </div>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
+                  <Link 
+                    href={`/portfolio/${categorySlug}`}
+                    className={styles.viewAllButton}
+                    style={{background: categoryColors[category] || 'var(--primary-color)'}}
+                  >
+                    전체 보기 →
+                  </Link>
+                </div>
+                
+                <div className={styles.portfolioGrid}>
+                  {items.slice(0, 3).map((item, index) => (
+                    <div key={index} className="card" style={{padding: 0, overflow: 'hidden'}}>
+                      <div style={{height: '250px', background: item.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '3rem'}}>
+                        {item.emoji}
+                      </div>
+                      <div style={{padding: '1.5rem'}}>
+                        <div className={styles.categoryBadge} style={{background: categoryColors[item.category] || 'var(--primary-color)'}}>
+                          {item.category}
+                        </div>
+                        <h3>{item.title}</h3>
+                        <p>{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </section>
 

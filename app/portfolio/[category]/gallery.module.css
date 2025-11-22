@@ -1,0 +1,262 @@
+.pageHeader {
+  color: var(--white);
+  padding: 3rem 0 4rem;
+  text-align: center;
+  position: relative;
+}
+
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.categoryIcon {
+  font-size: 5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pageHeader h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.pageHeader p {
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  opacity: 0.95;
+}
+
+.backButton {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  color: var(--white);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-5px);
+}
+
+.galleryInfo {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.galleryInfo strong {
+  color: var(--primary-color);
+  font-size: 1.3rem;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.galleryItem {
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  background: var(--white);
+}
+
+.galleryItem:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 75%; /* 4:3 비율 */
+  overflow: hidden;
+}
+
+.galleryImage {
+  transition: transform 0.3s ease;
+}
+
+.galleryItem:hover .galleryImage {
+  transform: scale(1.05);
+}
+
+.imageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.galleryItem:hover .imageOverlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.zoomIcon {
+  font-size: 2.5rem;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s ease;
+}
+
+.galleryItem:hover .zoomIcon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.imageTitle {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+
+.emptyIcon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+}
+
+.emptyState h2 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.errorContainer {
+  text-align: center;
+  padding: 5rem 2rem;
+}
+
+.errorContainer h1 {
+  color: var(--primary-color);
+  margin-bottom: 2rem;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 2rem;
+  cursor: pointer;
+}
+
+.modalContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  cursor: default;
+}
+
+.modalImage {
+  border-radius: 10px;
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 2001;
+  color: var(--text-primary);
+}
+
+.closeButton:hover {
+  background: var(--white);
+  transform: rotate(90deg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pageHeader h1 {
+    font-size: 2rem;
+  }
+
+  .categoryIcon {
+    font-size: 3.5rem;
+  }
+
+  .galleryGrid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .backButton {
+    top: 1rem;
+    left: 1rem;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .modal {
+    padding: 1rem;
+  }
+
+  .closeButton {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .galleryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerContent {
+    padding-top: 3rem;
+  }
+}
+

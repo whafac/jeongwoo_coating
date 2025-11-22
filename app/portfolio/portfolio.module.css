@@ -18,6 +18,59 @@
   opacity: 0.95;
 }
 
+.categorySection {
+  margin-bottom: 4rem;
+}
+
+.categoryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--light-gray);
+  border-radius: 10px;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.categoryHeaderContent {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.categoryIcon {
+  font-size: 3rem;
+}
+
+.categoryHeader h2 {
+  color: var(--primary-color);
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.categoryHeader p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.viewAllButton {
+  display: inline-block;
+  color: var(--white);
+  padding: 0.8rem 1.5rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.viewAllButton:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .portfolioGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -66,6 +119,20 @@
 @media (max-width: 768px) {
   .pageHeader h1 {
     font-size: 2rem;
+  }
+  
+  .categoryHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .categoryHeaderContent {
+    width: 100%;
+  }
+
+  .viewAllButton {
+    width: 100%;
+    text-align: center;
   }
   
   .portfolioGrid {
