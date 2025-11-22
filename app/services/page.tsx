@@ -38,12 +38,12 @@ export default function Services() {
               <div className={styles.serviceBoxInner}>
                 <div className={styles.serviceImage}>
                   <Image
-                    src="/uv-coating.svg"
-                    alt="UV 코팅"
-                    width={300}
-                    height={300}
+                    src="/uv_coating001.jpg"
+                    alt="UV 코팅 작업 샘플"
+                    width={888}
+                    height={578}
                     priority
-                    style={{ width: '100%', height: 'auto' }}
+                    style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
                   />
                 </div>
                 <h3>UV 코팅</h3>
