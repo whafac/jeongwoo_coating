@@ -46,6 +46,15 @@ export default function Header() {
       <div className={`${styles.overlay} ${isMenuOpen ? styles.active : ''}`} onClick={closeMenu}></div>
 
       <div className={`${styles.mobileMenu} ${isMenuOpen ? styles.active : ''}`}>
+        <div className={styles.mobileMenuHeader}>
+          <button 
+            className={styles.closeButton}
+            onClick={closeMenu}
+            aria-label="메뉴 닫기"
+          >
+            ✕
+          </button>
+        </div>
         <ul>
           <li><Link href="/" onClick={closeMenu}>홈</Link></li>
           <li><Link href="/services" onClick={closeMenu}>코팅서비스</Link></li>
