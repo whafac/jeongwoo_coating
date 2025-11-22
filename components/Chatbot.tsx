@@ -23,27 +23,27 @@ interface QuickButton {
 // 질문 카테고리와 답변 정의
 const questionCategories = {
   main: [
-    { id: 'service', label: '📋 서비스 안내', category: 'service' },
-    { id: 'quote', label: '💰 견적 문의', category: 'quote' },
-    { id: 'process', label: '⚙️ 작업 프로세스', category: 'process' },
-    { id: 'file', label: '📎 파일 제출 방법', category: 'file' },
-    { id: 'delivery', label: '⏰ 납기일 문의', category: 'delivery' },
-    { id: 'contact', label: '📞 연락처 안내', category: 'contact' },
-    { id: 'agent', label: '👤 상담원 연결', category: 'agent' },
+    { id: 'service', label: '서비스 안내', category: 'service' },
+    { id: 'quote', label: '견적 문의', category: 'quote' },
+    { id: 'process', label: '작업 프로세스', category: 'process' },
+    { id: 'file', label: '파일 제출 방법', category: 'file' },
+    { id: 'delivery', label: '납기일 문의', category: 'delivery' },
+    { id: 'contact', label: '연락처 안내', category: 'contact' },
+    { id: 'agent', label: '상담원 연결', category: 'agent' },
   ],
   service: [
-    { id: 'uv', label: '✨ UV 코팅', category: 'uv' },
-    { id: 'laminating', label: '📄 라미네이팅', category: 'laminating' },
-    { id: 'foil', label: '🌟 박 코팅', category: 'foil' },
-    { id: 'embossing', label: '🎨 형압 가공', category: 'embossing' },
+    { id: 'uv', label: 'UV 코팅', category: 'uv' },
+    { id: 'laminating', label: '라미네이팅', category: 'laminating' },
+    { id: 'foil', label: '박 코팅', category: 'foil' },
+    { id: 'embossing', label: '형압 가공', category: 'embossing' },
     { id: 'back', label: '← 뒤로가기', category: 'main' },
   ],
   quote: [
-    { id: 'quote-uv', label: '✨ UV 코팅 견적', category: 'quote-uv' },
-    { id: 'quote-laminating', label: '📄 라미네이팅 견적', category: 'quote-laminating' },
-    { id: 'quote-foil', label: '🌟 박 코팅 견적', category: 'quote-foil' },
-    { id: 'quote-embossing', label: '🎨 형압 가공 견적', category: 'quote-embossing' },
-    { id: 'quote-custom', label: '💬 자유 질문', category: 'quote-custom' },
+    { id: 'quote-uv', label: 'UV 코팅 견적', category: 'quote-uv' },
+    { id: 'quote-laminating', label: '라미네이팅 견적', category: 'quote-laminating' },
+    { id: 'quote-foil', label: '박 코팅 견적', category: 'quote-foil' },
+    { id: 'quote-embossing', label: '형압 가공 견적', category: 'quote-embossing' },
+    { id: 'quote-custom', label: '자유 질문', category: 'quote-custom' },
     { id: 'back', label: '← 뒤로가기', category: 'main' },
   ],
 };
@@ -234,7 +234,7 @@ export default function Chatbot() {
         text: '죄송합니다. 일시적인 오류가 발생했습니다. 상담원에게 직접 문의해 주세요.',
         isUser: false,
         timestamp: new Date(),
-        buttons: [{ id: 'agent', label: '👤 상담원 연결', action: 'agent' }]
+        buttons: [{ id: 'agent', label: '상담원 연결', action: 'agent' }]
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -304,7 +304,7 @@ export default function Chatbot() {
         text: '죄송합니다. 일시적인 오류가 발생했습니다. 상담원에게 직접 문의해 주세요.',
         isUser: false,
         timestamp: new Date(),
-        buttons: [{ id: 'agent', label: '👤 상담원 연결', action: 'agent' }]
+        buttons: [{ id: 'agent', label: '상담원 연결', action: 'agent' }]
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
