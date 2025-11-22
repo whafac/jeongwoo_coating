@@ -226,6 +226,11 @@ export default function AdminPage() {
         <div className="container">
           <h1>관리자 페이지</h1>
           <p>정우특수코팅 게시판 관리</p>
+          <div style={{marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
+            <Link href="/admin/chatbot-prompt" className="btn" style={{background: 'var(--accent-color)'}}>
+              🤖 챗봇 프롬프트 관리
+            </Link>
+          </div>
         </div>
       </section>
 

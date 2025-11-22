@@ -7,9 +7,8 @@ export const openai = process.env.OPENAI_API_KEY
     })
   : null;
 
-// 견적 관련 프롬프트 생성 함수
-export function getQuotePrompt(context: string = ''): string {
-  return `당신은 정우특수코팅의 견적 전문 상담사입니다.
+// 기본 견적 프롬프트 (데이터베이스에서 가져오지 못할 때 사용)
+const DEFAULT_QUOTE_PROMPT = `당신은 정우특수코팅의 견적 전문 상담사입니다.
 
 🏢 **회사 정보:**
 - 정우특수코팅은 1999년 설립된 인쇄코팅 후가공 전문 기업입니다.
@@ -51,10 +50,47 @@ export function getQuotePrompt(context: string = ''): string {
 - 친절하고 전문적으로 답변하세요.
 - 구체적인 수치가 없는 경우 대략적인 범위를 제시하세요.
 
-${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}
-
 **중요:** 정확한 견적은 파일과 상세 정보 확인 후 가능하므로, 최종 견적은 담당자와 직접 상담을 권장합니다.`;
+
+// 견적 관련 프롬프트 생성 함수 (데이터베이스에서 가져오거나 기본값 사용)
+export async function getQuotePrompt(context: string = ''): Promise<string> {
+  try {
+    // 데이터베이스에서 프롬프트 가져오기 시도
+    const { supabase } = await import('@/lib/database');
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('company_code', 'jeongwoo')
+      .single();
+
+    if (company) {
+      const { data: settings } = await supabase
+        .from('chatbot_settings')
+        .select('setting_value')
+        .eq('company_id', company.id)
+        .eq('setting_key', 'quote_prompt')
+        .single();
+
+      if (settings?.setting_value) {
+        const prompt = settings.setting_value as string;
+        return context ? `${prompt}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : prompt;
+      }
+    }
+  } catch (error) {
+    console.error('프롬프트 가져오기 오류:', error);
+  }
+
+  // 데이터베이스에서 가져오지 못한 경우 기본 프롬프트 사용
+  return context ? `${DEFAULT_QUOTE_PROMPT}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : DEFAULT_QUOTE_PROMPT;
 }
+
+// 동기 버전 (기본 프롬프트만 반환, 호환성을 위해 유지)
+export function getQuotePromptSync(context: string = ''): string {
+  return context ? `${DEFAULT_QUOTE_PROMPT}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : DEFAULT_QUOTE_PROMPT;
+}
+
+// 기본 프롬프트 내보내기 (관리 페이지에서 사용)
+export { DEFAULT_QUOTE_PROMPT };
 
 // 견적 관련 기본 답변 생성 함수 (API 키 없을 때 사용)
 export function generateQuoteResponse(userMessage: string): string {
@@ -126,8 +162,9 @@ export async function generateChatbotResponse(
   
   try {
     // 견적 문의인 경우 견적 전용 프롬프트 사용
+    const quotePrompt = isQuoteInquiry ? await getQuotePrompt(context) : '';
     const systemPrompt = isQuoteInquiry 
-      ? getQuotePrompt(context)
+      ? quotePrompt
       : `당신은 정우특수코팅의 전문 챗봇입니다. 
 
 🏢 **회사 정보:**

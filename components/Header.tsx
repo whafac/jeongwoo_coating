@@ -31,6 +31,7 @@ export default function Header() {
               <li><Link href="/portfolio">작업사례</Link></li>
               <li><Link href="/about">회사소개</Link></li>
               <li><Link href="/board">게시판</Link></li>
+              <li><Link href="/admin">관리자</Link></li>
               <li><Link href="/chatbot-analytics">챗봇분석</Link></li>
               <li><Link href="/contact">문의하기</Link></li>
             </ul>
@@ -62,6 +63,7 @@ export default function Header() {
           <li><Link href="/portfolio" onClick={closeMenu}>작업사례</Link></li>
           <li><Link href="/about" onClick={closeMenu}>회사소개</Link></li>
           <li><Link href="/board" onClick={closeMenu}>게시판</Link></li>
+          <li><Link href="/admin" onClick={closeMenu}>관리자</Link></li>
           <li><Link href="/chatbot-analytics" onClick={closeMenu}>챗봇분석</Link></li>
           <li><Link href="/contact" onClick={closeMenu}>문의하기</Link></li>
         </ul>
