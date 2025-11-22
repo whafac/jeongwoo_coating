@@ -136,41 +136,42 @@
 /* 빠른 응답 버튼 */
 .quickButtons {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-direction: row;
+  gap: 6px;
   margin-top: 12px;
   flex-wrap: wrap;
   align-items: flex-start;
 }
 
 .quickButton {
-  padding: 10px 16px;
+  padding: 6px 12px;
   border: 1.5px solid var(--primary-color);
-  border-radius: 20px;
+  border-radius: 16px;
   background: white;
   color: var(--primary-color);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  text-align: center;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   white-space: nowrap;
   width: auto;
   min-width: fit-content;
-  max-width: 100%;
+  line-height: 1.4;
 }
 
 .quickButton:hover:not(:disabled) {
   background: var(--primary-color);
   color: white;
-  transform: translateX(3px);
-  box-shadow: 0 2px 8px rgba(44, 95, 141, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(44, 95, 141, 0.3);
 }
 
 .quickButton:active:not(:disabled) {
-  transform: translateX(3px) scale(0.98);
+  transform: translateY(0) scale(0.97);
 }
 
 .quickButton:disabled {
