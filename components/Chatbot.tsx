@@ -113,7 +113,7 @@ export default function Chatbot() {
     setIsLoading(true);
 
     // 뒤로가기 버튼 처리
-    if (category === 'main' || buttonId === 'main') {
+    if (category === 'main' || buttonId === 'back') {
       setTimeout(() => {
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -128,8 +128,27 @@ export default function Chatbot() {
       return;
     }
 
-    // 즉시 답변이 있는 경우
+    // 카테고리 버튼 클릭 시 다음 단계 버튼 표시
     const answerKey = category || buttonId;
+    
+    // 먼저 카테고리별 다음 단계 버튼이 있는지 확인
+    if (answerKey && questionCategories[answerKey as keyof typeof questionCategories]) {
+      const answer = answers[answerKey];
+      setTimeout(() => {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: answer ? answer.text : `${buttonLabel}에 대한 정보입니다.`,
+          isUser: false,
+          timestamp: new Date(),
+          buttons: questionCategories[answerKey as keyof typeof questionCategories]
+        };
+        setMessages(prev => [...prev, botMessage]);
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
+    // 즉시 답변이 있는 경우
     const answer = answers[answerKey];
     
     if (answer) {

@@ -140,6 +140,7 @@
   gap: 8px;
   margin-top: 12px;
   flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 .quickButton {
@@ -153,10 +154,12 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  width: 100%;
-  max-width: 280px;
+  white-space: nowrap;
+  width: auto;
+  min-width: fit-content;
+  max-width: 100%;
 }
 
 .quickButton:hover:not(:disabled) {
