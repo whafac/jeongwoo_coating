@@ -11,16 +11,81 @@ interface Message {
   isLoading?: boolean;
   aiGenerated?: boolean;
   feedbackSubmitted?: boolean;
+  buttons?: QuickButton[];
 }
+
+interface QuickButton {
+  id: string;
+  label: string;
+  action?: string;
+}
+
+// 질문 카테고리와 답변 정의
+const questionCategories = {
+  main: [
+    { id: 'service', label: '📋 서비스 안내', category: 'service' },
+    { id: 'quote', label: '💰 견적 문의', category: 'quote' },
+    { id: 'process', label: '⚙️ 작업 프로세스', category: 'process' },
+    { id: 'file', label: '📎 파일 제출 방법', category: 'file' },
+    { id: 'delivery', label: '⏰ 납기일 문의', category: 'delivery' },
+    { id: 'contact', label: '📞 연락처 안내', category: 'contact' },
+    { id: 'agent', label: '👤 상담원 연결', category: 'agent' },
+  ],
+  service: [
+    { id: 'uv', label: '✨ UV 코팅', category: 'uv' },
+    { id: 'laminating', label: '📄 라미네이팅', category: 'laminating' },
+    { id: 'foil', label: '🌟 박 코팅', category: 'foil' },
+    { id: 'embossing', label: '🎨 형압 가공', category: 'embossing' },
+    { id: 'back', label: '← 뒤로가기', category: 'main' },
+  ],
+};
+
+const answers: Record<string, { text: string; nextButtons?: string }> = {
+  service: {
+    text: '정우특수코팅의 주요 서비스를 안내해드리겠습니다. 어떤 서비스에 대해 알고 싶으신가요?',
+    nextButtons: 'service'
+  },
+  quote: {
+    text: '견적 문의를 원하시는군요! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다. 📋'
+  },
+  process: {
+    text: '작업 프로세스는 4단계로 진행됩니다:\n\n1️⃣ 상담 - 요구사항 확인\n2️⃣ 견적 - 비용 산정\n3️⃣ 작업 - 코팅 진행\n4️⃣ 납품 - 완제품 전달\n\n일반적으로 2-3일 소요되며, 급한 경우 당일 작업도 가능합니다.'
+  },
+  file: {
+    text: '파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일은 이메일 또는 온라인 문의 폼으로 제출 가능합니다.'
+  },
+  delivery: {
+    text: '작업 소요시간 안내:\n\n⏱️ 일반 작업: 2-3일\n⚡ 긴급 작업: 당일 가능 (추가 비용 발생)\n📦 택배 발송: 1일 추가\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.'
+  },
+  contact: {
+    text: '연락처 정보:\n\n📞 전화: 02-1234-5678\n📧 이메일: info@jeongwoo.co.kr\n📍 주소: 서울시 XX구 XX동\n⏰ 영업시간: 평일 09:00 - 18:00\n\n온라인 문의 폼: /contact\n무료 상담 서비스 제공 중입니다! 😊'
+  },
+  agent: {
+    text: '상담원 연결 안내:\n\n상담원과 직접 대화하시려면:\n📞 전화: 02-1234-5678\n📧 이메일: info@jeongwoo.co.kr\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.'
+  },
+  uv: {
+    text: '✨ UV 코팅 서비스 안내:\n\n자외선(UV)으로 경화시키는 코팅 방식으로:\n• 빠른 건조 시간\n• 뛰어난 광택감\n• 우수한 내구성\n• 명함, 카탈로그, 포스터 등에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
+  },
+  laminating: {
+    text: '📄 라미네이팅 서비스 안내:\n\n필름을 인쇄물 표면에 부착하여 보호:\n• 유광/무광 라미네이팅\n• 방수 및 오염 방지\n• 책 표지, 메뉴판, 카드 등에 최적\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
+  },
+  foil: {
+    text: '🌟 박 코팅 서비스 안내:\n\n금속 박막을 인쇄물에 전사:\n• 금박, 은박, 홀로그램 박\n• 화려하고 고급스러운 효과\n• 명함, 초대장, 패키지 등에 활용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
+  },
+  embossing: {
+    text: '🎨 형압 가공 서비스 안내:\n\n압력을 가하여 입체적 효과:\n• 양각 (돌출)\n• 음각 (들어감)\n• 독특한 촉감과 시각적 효과\n• 명함, 초대장, 고급 인쇄물에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
+  },
+};
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '안녕하세요! 정우특수코팅 챗봇입니다. 궁금한 것이 있으시면 언제든 물어보세요! 😊',
+      text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
+      buttons: questionCategories.main
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -35,6 +100,97 @@ export default function Chatbot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleButtonClick = async (buttonId: string, buttonLabel: string, category?: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: buttonLabel,
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    // 뒤로가기 버튼 처리
+    if (category === 'main' || buttonId === 'main') {
+      setTimeout(() => {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: '다른 궁금한 사항이 있으시면 아래 버튼을 선택해주세요! 😊',
+          isUser: false,
+          timestamp: new Date(),
+          buttons: questionCategories.main
+        };
+        setMessages(prev => [...prev, botMessage]);
+        setIsLoading(false);
+      }, 300);
+      return;
+    }
+
+    // 즉시 답변이 있는 경우
+    const answerKey = category || buttonId;
+    const answer = answers[answerKey];
+    
+    if (answer) {
+      setTimeout(() => {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: answer.text,
+          isUser: false,
+          timestamp: new Date(),
+          buttons: answer.nextButtons ? questionCategories[answer.nextButtons as keyof typeof questionCategories] : questionCategories.main
+        };
+        setMessages(prev => [...prev, botMessage]);
+        setIsLoading(false);
+      }, 500);
+      return;
+    }
+
+    // AI 응답이 필요한 경우
+    try {
+      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      const response = await fetch('/api/chatbot/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: buttonLabel,
+          sessionToken: sessionToken
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: data.message,
+          isUser: false,
+          timestamp: new Date(),
+          aiGenerated: data.aiUsed || false,
+          buttons: questionCategories.main // 추가 질문 버튼
+        };
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        throw new Error(data.error || '응답을 받을 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('챗봇 API 오류:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: '죄송합니다. 일시적인 오류가 발생했습니다. 상담원에게 직접 문의해 주세요.',
+        isUser: false,
+        timestamp: new Date(),
+        buttons: [{ id: 'agent', label: '👤 상담원 연결', action: 'agent' }]
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -52,7 +208,6 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      // 세션 토큰 생성 (간단한 구현)
       const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const response = await fetch('/api/chatbot/send', {
@@ -74,7 +229,8 @@ export default function Chatbot() {
           text: data.message,
           isUser: false,
           timestamp: new Date(),
-          aiGenerated: data.aiUsed || false
+          aiGenerated: data.aiUsed || false,
+          buttons: questionCategories.main // 추가 질문 버튼
         };
         setMessages(prev => [...prev, botMessage]);
       } else {
@@ -84,9 +240,10 @@ export default function Chatbot() {
       console.error('챗봇 API 오류:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: '죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+        text: '죄송합니다. 일시적인 오류가 발생했습니다. 상담원에게 직접 문의해 주세요.',
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        buttons: [{ id: 'agent', label: '👤 상담원 연결', action: 'agent' }]
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -174,11 +331,30 @@ export default function Chatbot() {
               >
                 <div className={styles.messageContent}>
                   <div className={styles.messageText}>
-                    {message.text}
+                    {message.text.split('\n').map((line, idx) => (
+                      <div key={idx}>{line}</div>
+                    ))}
                     {message.aiGenerated && (
                       <span className={styles.aiIndicator}>🤖 AI</span>
                     )}
                   </div>
+                  
+                  {/* 버튼 영역 */}
+                  {message.buttons && message.buttons.length > 0 && (
+                    <div className={styles.quickButtons}>
+                      {message.buttons.map((button) => (
+                        <button
+                          key={button.id}
+                          className={styles.quickButton}
+                          onClick={() => handleButtonClick(button.id, button.label, button.category)}
+                          disabled={isLoading}
+                        >
+                          {button.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className={styles.messageTime}>
                     {message.timestamp.toLocaleTimeString('ko-KR', {
                       hour: '2-digit',
