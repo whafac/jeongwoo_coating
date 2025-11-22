@@ -38,6 +38,14 @@ const questionCategories = {
     { id: 'embossing', label: '🎨 형압 가공', category: 'embossing' },
     { id: 'back', label: '← 뒤로가기', category: 'main' },
   ],
+  quote: [
+    { id: 'quote-uv', label: '✨ UV 코팅 견적', category: 'quote-uv' },
+    { id: 'quote-laminating', label: '📄 라미네이팅 견적', category: 'quote-laminating' },
+    { id: 'quote-foil', label: '🌟 박 코팅 견적', category: 'quote-foil' },
+    { id: 'quote-embossing', label: '🎨 형압 가공 견적', category: 'quote-embossing' },
+    { id: 'quote-custom', label: '💬 자유 질문', category: 'quote-custom' },
+    { id: 'back', label: '← 뒤로가기', category: 'main' },
+  ],
 };
 
 const answers: Record<string, { text: string; nextButtons?: string }> = {
@@ -46,7 +54,23 @@ const answers: Record<string, { text: string; nextButtons?: string }> = {
     nextButtons: 'service'
   },
   quote: {
-    text: '견적 문의를 원하시는군요! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다. 📋'
+    text: '견적 문의를 도와드리겠습니다! 어떤 코팅 서비스의 견적이 궁금하신가요? 아래 버튼을 선택하시거나 자유롭게 질문해주세요. 📋',
+    nextButtons: 'quote'
+  },
+  'quote-uv': {
+    text: 'UV 코팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
+  },
+  'quote-laminating': {
+    text: '라미네이팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 유광/무광 선택\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
+  },
+  'quote-foil': {
+    text: '박 코팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 박 종류 (금박/은박/홀로그램)\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
+  },
+  'quote-embossing': {
+    text: '형압 가공 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 형압 종류 (양각/음각)\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
+  },
+  'quote-custom': {
+    text: '코팅 견적에 대해 자유롭게 질문해주세요! 인쇄물 종류, 수량, 납기일 등 필요한 정보를 알려주시면 정확한 견적을 도와드리겠습니다. 💬'
   },
   process: {
     text: '작업 프로세스는 4단계로 진행됩니다:\n\n1️⃣ 상담 - 요구사항 확인\n2️⃣ 견적 - 비용 산정\n3️⃣ 작업 - 코팅 진행\n4️⃣ 납품 - 완제품 전달\n\n일반적으로 2-3일 소요되며, 급한 경우 당일 작업도 가능합니다.'
@@ -170,6 +194,9 @@ export default function Chatbot() {
     try {
       const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      // 견적 관련 질문인지 확인
+      const isQuote = buttonId.startsWith('quote-') || category?.startsWith('quote');
+      
       const response = await fetch('/api/chatbot/send', {
         method: 'POST',
         headers: {
@@ -177,20 +204,24 @@ export default function Chatbot() {
         },
         body: JSON.stringify({
           message: buttonLabel,
-          sessionToken: sessionToken
+          sessionToken: sessionToken,
+          isQuoteInquiry: isQuote
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // 견적 관련 질문인 경우 견적 버튼 유지
+        const nextButtons = isQuote ? questionCategories.quote : questionCategories.main;
+        
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           text: data.message,
           isUser: false,
           timestamp: new Date(),
           aiGenerated: data.aiUsed || false,
-          buttons: questionCategories.main // 추가 질문 버튼
+          buttons: nextButtons
         };
         setMessages(prev => [...prev, botMessage]);
       } else {
@@ -229,6 +260,12 @@ export default function Chatbot() {
     try {
       const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      // 대화 기록에서 견적 문의 컨텍스트 확인
+      const recentMessages = messages.slice(-5).filter(m => !m.isUser);
+      const isQuoteContext = recentMessages.some(m => 
+        m.text.includes('견적') || m.buttons?.some(b => b.id.startsWith('quote-'))
+      );
+      
       const response = await fetch('/api/chatbot/send', {
         method: 'POST',
         headers: {
@@ -236,20 +273,25 @@ export default function Chatbot() {
         },
         body: JSON.stringify({
           message: currentInput,
-          sessionToken: sessionToken
+          sessionToken: sessionToken,
+          isQuoteInquiry: isQuoteContext || /견적|가격|비용|단가/.test(currentInput)
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // 견적 문의 컨텍스트인 경우 견적 버튼 유지
+        const quoteContext = isQuoteContext || /견적|가격|비용|단가/.test(currentInput);
+        const nextButtons = quoteContext ? questionCategories.quote : questionCategories.main;
+        
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           text: data.message,
           isUser: false,
           timestamp: new Date(),
           aiGenerated: data.aiUsed || false,
-          buttons: questionCategories.main // 추가 질문 버튼
+          buttons: nextButtons
         };
         setMessages(prev => [...prev, botMessage]);
       } else {

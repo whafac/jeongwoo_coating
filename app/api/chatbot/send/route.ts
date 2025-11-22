@@ -4,7 +4,7 @@ import { generateChatbotResponse, calculateTokenUsage, calculateCost } from '@/l
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, sessionToken } = await request.json();
+    const { message, sessionToken, isQuoteInquiry } = await request.json();
 
     if (!message || !sessionToken) {
       return NextResponse.json(
@@ -13,8 +13,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1단계: 기본 지식베이스 검색
-    const knowledgeResponse = await searchKnowledgeBase(message);
+    // 견적 문의 여부 확인 (메시지 내용 또는 플래그로 판단)
+    const quoteKeywords = ['견적', '가격', '비용', '단가', 'quote', 'quote-uv', 'quote-laminating', 'quote-foil', 'quote-embossing', 'quote-custom'];
+    const isQuote = isQuoteInquiry || quoteKeywords.some(keyword => message.toLowerCase().includes(keyword));
+    
+    // 1단계: 기본 지식베이스 검색 (견적 문의가 아닌 경우만)
+    const knowledgeResponse = isQuote ? null : await searchKnowledgeBase(message);
     
     // 2단계: 대화 기록 저장
     await saveChatMessage(sessionToken, 'user', message);
@@ -60,7 +64,8 @@ export async function POST(request: NextRequest) {
         botResponse = await generateChatbotResponse(
           message,
           context,
-          conversationHistory
+          conversationHistory,
+          isQuote
         );
         
         aiUsed = true;
