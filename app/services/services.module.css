@@ -79,6 +79,15 @@
   margin-bottom: 1rem;
 }
 
+.serviceImage {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
 .serviceBoxInner h3 {
   color: var(--primary-color);
   margin-bottom: 1rem;

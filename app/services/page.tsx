@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import styles from './services.module.css';
 
 
@@ -35,7 +36,16 @@ export default function Services() {
             </div>
             <div className={styles.serviceBox}>
               <div className={styles.serviceBoxInner}>
-                <div className={styles.serviceEmoji}>✨</div>
+                <div className={styles.serviceImage}>
+                  <Image
+                    src="/uv-coating.svg"
+                    alt="UV 코팅"
+                    width={300}
+                    height={300}
+                    priority
+                    style={{ width: '100%', height: 'auto' }}
+                  />
+                </div>
                 <h3>UV 코팅</h3>
                 <p>고급스러운 광택 마감</p>
               </div>
