@@ -422,43 +422,6 @@ export default function Chatbot() {
                       minute: '2-digit'
                     })}
                   </div>
-                  
-                  {/* 피드백 버튼 (봇 메시지에만 표시) */}
-                  {!message.isUser && !message.feedbackSubmitted && (
-                    <div className={styles.feedbackSection}>
-                      <span className={styles.feedbackLabel}>이 답변이 도움이 되었나요?</span>
-                      <div className={styles.feedbackButtons}>
-                        <button
-                          className={`${styles.feedbackBtn} ${styles.helpful}`}
-                          onClick={() => handleFeedback(message.id, 'helpful')}
-                          disabled={feedbackSubmitting === message.id}
-                        >
-                          👍 도움됨
-                        </button>
-                        <button
-                          className={`${styles.feedbackBtn} ${styles.neutral}`}
-                          onClick={() => handleFeedback(message.id, 'neutral')}
-                          disabled={feedbackSubmitting === message.id}
-                        >
-                          😐 보통
-                        </button>
-                        <button
-                          className={`${styles.feedbackBtn} ${styles.notHelpful}`}
-                          onClick={() => handleFeedback(message.id, 'not_helpful')}
-                          disabled={feedbackSubmitting === message.id}
-                        >
-                          👎 도움안됨
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* 피드백 제출 완료 표시 */}
-                  {!message.isUser && message.feedbackSubmitted && (
-                    <div className={styles.feedbackSubmitted}>
-                      <span>피드백을 주셔서 감사합니다! 🙏</span>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
