@@ -119,15 +119,7 @@ const getSessionToken = (): string => {
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
-      isUser: false,
-      timestamp: new Date(),
-      buttons: questionCategories.main
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]); // 초기 상태를 빈 배열로 시작
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
@@ -159,50 +151,88 @@ export default function Chatbot() {
       setIsLoadingHistory(true);
       const limit = 20; // 한 번에 20개씩
       const response = await fetch(`/api/chatbot/history?sessionToken=${sessionToken}&limit=${limit}&offset=${offset}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.messages && data.messages.length > 0) {
-          // 이전 대화 기록이 있으면 불러오기
-          const loadedMessages: Message[] = data.messages.map((msg: any, index: number) => ({
-            id: msg.id || `loaded_${offset + index}`,
-            text: msg.text,
-            isUser: msg.isUser,
-            timestamp: new Date(msg.timestamp),
-            buttons: undefined // 버튼은 나중에 마지막 메시지에만 추가
-          }));
-          
-          if (append) {
-            // 이전 메시지를 앞에 추가
-            setMessages(prev => [...loadedMessages, ...prev]);
-          } else {
-            // 새로 불러오기 (최근 메시지)
-            setMessages(loadedMessages);
-            // 마지막 메시지가 봇 메시지면 버튼 추가
-            if (loadedMessages.length > 0 && !loadedMessages[loadedMessages.length - 1].isUser) {
-              loadedMessages[loadedMessages.length - 1].buttons = questionCategories.main;
-              setMessages([...loadedMessages]);
-            }
-          }
-          
-          setHasMoreHistory(data.hasMore || false);
-          setHistoryOffset(data.offset + data.limit);
-        } else {
-          // 대화 기록이 없으면 초기 메시지만 표시
-          if (!append) {
-            setMessages([{
-              id: '1',
-              text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
-              isUser: false,
-              timestamp: new Date(),
-              buttons: questionCategories.main
-            }]);
-          }
-          setHasMoreHistory(false);
+      
+      if (!response.ok) {
+        // API 응답 실패 시 처리
+        console.error('대화 기록 API 응답 실패:', response.status, response.statusText);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('에러 상세:', errorData);
+        
+        // 대화 기록이 없거나 세션이 없는 경우 초기 메시지 표시
+        if (!append) {
+          setMessages([{
+            id: '1',
+            text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
+            isUser: false,
+            timestamp: new Date(),
+            buttons: questionCategories.main
+          }]);
         }
+        setHasMoreHistory(false);
         setHistoryLoaded(true);
+        return;
       }
+      
+      const data = await response.json();
+      console.log('대화 기록 로드 결과:', { 
+        messageCount: data.messages?.length || 0, 
+        hasMore: data.hasMore,
+        totalCount: data.totalCount,
+        sessionToken: sessionToken.substring(0, 20) + '...'
+      });
+      
+      if (data.messages && data.messages.length > 0) {
+        // 이전 대화 기록이 있으면 불러오기
+        const loadedMessages: Message[] = data.messages.map((msg: any, index: number) => ({
+          id: msg.id || `loaded_${offset + index}`,
+          text: msg.text,
+          isUser: msg.isUser,
+          timestamp: new Date(msg.timestamp),
+          buttons: undefined // 버튼은 나중에 마지막 메시지에만 추가
+        }));
+        
+        if (append) {
+          // 이전 메시지를 앞에 추가
+          setMessages(prev => [...loadedMessages, ...prev]);
+        } else {
+          // 새로 불러오기 (최근 메시지)
+          setMessages(loadedMessages);
+          // 마지막 메시지가 봇 메시지면 버튼 추가
+          if (loadedMessages.length > 0 && !loadedMessages[loadedMessages.length - 1].isUser) {
+            loadedMessages[loadedMessages.length - 1].buttons = questionCategories.main;
+            setMessages([...loadedMessages]);
+          }
+        }
+        
+        setHasMoreHistory(data.hasMore || false);
+        setHistoryOffset(data.offset + data.limit);
+      } else {
+        // 대화 기록이 없으면 초기 메시지만 표시
+        if (!append) {
+          setMessages([{
+            id: '1',
+            text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
+            isUser: false,
+            timestamp: new Date(),
+            buttons: questionCategories.main
+          }]);
+        }
+        setHasMoreHistory(false);
+      }
+      setHistoryLoaded(true);
     } catch (error) {
       console.error('대화 기록 불러오기 오류:', error);
+      // 에러 발생 시에도 초기 메시지 표시
+      if (!append) {
+        setMessages([{
+          id: '1',
+          text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
+          isUser: false,
+          timestamp: new Date(),
+          buttons: questionCategories.main
+        }]);
+      }
+      setHasMoreHistory(false);
       setHistoryLoaded(true);
     } finally {
       setIsLoadingHistory(false);
