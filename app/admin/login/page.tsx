@@ -7,15 +7,24 @@ import styles from './login.module.css';
 export default function AdminLogin() {
   const router = useRouter();
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // 이미 로그인되어 있으면 관리자 페이지로 리다이렉트
-    const isAuthenticated = document.cookie.includes('admin_authenticated=true');
-    if (isAuthenticated) {
-      router.push('/admin');
-    }
+    // 이미 로그인되어 있는지 확인
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/admin/auth');
+        const data = await response.json();
+        if (data.authenticated) {
+          router.push('/admin');
+        }
+      } catch (error) {
+        console.error('인증 확인 오류:', error);
+      }
+    };
+    checkAuth();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,21 +39,21 @@ export default function AdminLogin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ password }),
+        credentials: 'include', // 쿠키 포함
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // 로그인 성공 - 쿠키에 인증 정보 저장
-        document.cookie = 'admin_authenticated=true; path=/; max-age=86400'; // 24시간
-        router.push('/admin');
+        // 로그인 성공 - 서버에서 쿠키가 설정되었으므로 강제 리다이렉트
+        window.location.href = '/admin';
       } else {
         setError(data.error || '비밀번호가 올바르지 않습니다.');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('로그인 오류:', error);
       setError('로그인 중 오류가 발생했습니다.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -66,16 +75,28 @@ export default function AdminLogin() {
 
           <div className={styles.formGroup}>
             <label htmlFor="password">비밀번호</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="관리자 비밀번호를 입력하세요"
-              required
-              autoFocus
-              disabled={isLoading}
-            />
+            <div className={styles.passwordInputContainer}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="관리자 비밀번호를 입력하세요"
+                required
+                autoFocus
+                disabled={isLoading}
+                className={styles.passwordInput}
+              />
+              <button
+                type="button"
+                className={styles.passwordToggle}
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
+                aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
           </div>
 
           <button

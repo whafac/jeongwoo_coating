@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 인증 성공 - 쿠키 설정
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     cookieStore.set('admin_authenticated', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 // 로그아웃 API
 export async function DELETE(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     cookieStore.delete('admin_authenticated');
 
     return NextResponse.json({
@@ -71,7 +71,7 @@ export async function DELETE(request: NextRequest) {
 // 인증 상태 확인 API
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const isAuthenticated = cookieStore.get('admin_authenticated')?.value === 'true';
 
     return NextResponse.json({
