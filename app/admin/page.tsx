@@ -38,6 +38,24 @@ export default function AdminPage() {
   const [newComment, setNewComment] = useState('');
   const [showReplyModal, setShowReplyModal] = useState(false);
 
+  const handleLogout = async () => {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      try {
+        await fetch('/api/admin/auth', {
+          method: 'DELETE',
+        });
+        // 쿠키 삭제 및 리다이렉트
+        document.cookie = 'admin_authenticated=; path=/; max-age=0';
+        window.location.href = '/admin/login';
+      } catch (error) {
+        console.error('로그아웃 오류:', error);
+        // 에러가 발생해도 쿠키 삭제 후 리다이렉트
+        document.cookie = 'admin_authenticated=; path=/; max-age=0';
+        window.location.href = '/admin/login';
+      }
+    }
+  };
+
   useEffect(() => {
     fetchPosts();
   }, [activeTab]);
@@ -225,8 +243,19 @@ export default function AdminPage() {
       {/* Page Header */}
       <section className={styles.pageHeader}>
         <div className="container">
-          <h1>관리자 페이지</h1>
-          <p>정우특수코팅 게시판 관리</p>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'}}>
+            <div>
+              <h1>관리자 페이지</h1>
+              <p>정우특수코팅 게시판 관리</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="btn"
+              style={{background: 'rgba(255, 255, 255, 0.2)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.3)'}}
+            >
+              🚪 로그아웃
+            </button>
+          </div>
           <div style={{marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
             <Link href="/admin/chatbot-prompt" className="btn" style={{background: 'var(--accent-color)'}}>
               🤖 챗봇 프롬프트 관리

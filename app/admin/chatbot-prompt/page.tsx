@@ -18,6 +18,22 @@ export default function ChatbotPromptPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
+  const handleLogout = async () => {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      try {
+        await fetch('/api/admin/auth', {
+          method: 'DELETE',
+        });
+        document.cookie = 'admin_authenticated=; path=/; max-age=0';
+        window.location.href = '/admin/login';
+      } catch (error) {
+        console.error('로그아웃 오류:', error);
+        document.cookie = 'admin_authenticated=; path=/; max-age=0';
+        window.location.href = '/admin/login';
+      }
+    }
+  };
+
   useEffect(() => {
     fetchPrompt();
   }, []);
@@ -156,14 +172,25 @@ export default function ChatbotPromptPage() {
       {/* Page Header */}
       <section className={styles.pageHeader}>
         <div className="container">
-          <button 
-            onClick={() => router.back()}
-            className={styles.backButton}
-          >
-            ← 뒤로가기
-          </button>
-          <h1>챗봇 프롬프트 관리</h1>
-          <p>견적 문의 챗봇 답변의 기준이 되는 프롬프트를 수정할 수 있습니다</p>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem'}}>
+            <div style={{flex: 1}}>
+              <button 
+                onClick={() => router.back()}
+                className={styles.backButton}
+              >
+                ← 뒤로가기
+              </button>
+              <h1>챗봇 프롬프트 관리</h1>
+              <p>견적 문의 챗봇 답변의 기준이 되는 프롬프트를 수정할 수 있습니다</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="btn"
+              style={{background: 'rgba(255, 255, 255, 0.2)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.3)', marginTop: '2rem'}}
+            >
+              🚪 로그아웃
+            </button>
+          </div>
         </div>
       </section>
 
