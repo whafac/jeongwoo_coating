@@ -133,6 +133,9 @@ export default function Chatbot() {
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
   const [sessionToken] = useState<string>(getSessionToken());
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [historyOffset, setHistoryOffset] = useState(0);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -150,38 +153,66 @@ export default function Chatbot() {
     }
   }, [isOpen, historyLoaded]);
 
-  // 대화 기록 불러오기 함수
-  const loadConversationHistory = async () => {
+  // 대화 기록 불러오기 함수 (최근 메시지만)
+  const loadConversationHistory = async (offset: number = 0, append: boolean = false) => {
     try {
-      const response = await fetch(`/api/chatbot/history?sessionToken=${sessionToken}`);
+      setIsLoadingHistory(true);
+      const limit = 20; // 한 번에 20개씩
+      const response = await fetch(`/api/chatbot/history?sessionToken=${sessionToken}&limit=${limit}&offset=${offset}`);
       if (response.ok) {
         const data = await response.json();
         if (data.messages && data.messages.length > 0) {
           // 이전 대화 기록이 있으면 불러오기
           const loadedMessages: Message[] = data.messages.map((msg: any, index: number) => ({
-            id: msg.id || `loaded_${index}`,
+            id: msg.id || `loaded_${offset + index}`,
             text: msg.text,
             isUser: msg.isUser,
             timestamp: new Date(msg.timestamp),
-            buttons: msg.isUser ? undefined : (index === data.messages.length - 1 ? questionCategories.main : undefined)
+            buttons: undefined // 버튼은 나중에 마지막 메시지에만 추가
           }));
           
-          // 마지막 메시지가 봇 메시지면 버튼 추가
-          if (loadedMessages.length > 0 && !loadedMessages[loadedMessages.length - 1].isUser) {
-            loadedMessages[loadedMessages.length - 1].buttons = questionCategories.main;
+          if (append) {
+            // 이전 메시지를 앞에 추가
+            setMessages(prev => [...loadedMessages, ...prev]);
+          } else {
+            // 새로 불러오기 (최근 메시지)
+            setMessages(loadedMessages);
+            // 마지막 메시지가 봇 메시지면 버튼 추가
+            if (loadedMessages.length > 0 && !loadedMessages[loadedMessages.length - 1].isUser) {
+              loadedMessages[loadedMessages.length - 1].buttons = questionCategories.main;
+              setMessages([...loadedMessages]);
+            }
           }
           
-          setMessages(loadedMessages);
-          setHistoryLoaded(true);
+          setHasMoreHistory(data.hasMore || false);
+          setHistoryOffset(data.offset + data.limit);
         } else {
           // 대화 기록이 없으면 초기 메시지만 표시
-          setHistoryLoaded(true);
+          if (!append) {
+            setMessages([{
+              id: '1',
+              text: '안녕하세요! 정우특수코팅 챗봇입니다. 😊\n궁금한 것이 있으시면 아래 버튼을 클릭해주세요!',
+              isUser: false,
+              timestamp: new Date(),
+              buttons: questionCategories.main
+            }]);
+          }
+          setHasMoreHistory(false);
         }
+        setHistoryLoaded(true);
       }
     } catch (error) {
       console.error('대화 기록 불러오기 오류:', error);
       setHistoryLoaded(true);
+    } finally {
+      setIsLoadingHistory(false);
     }
+  };
+
+  // 이전 대화 더 불러오기
+  const loadMoreHistory = async () => {
+    if (isLoadingHistory || !hasMoreHistory) return;
+    await loadConversationHistory(historyOffset, true);
   };
 
   const handleButtonClick = async (buttonId: string, buttonLabel: string, category?: string) => {
@@ -438,6 +469,19 @@ export default function Chatbot() {
           </div>
 
           <div className={styles.messagesContainer}>
+            {/* 이전 대화 보기 버튼 */}
+            {hasMoreHistory && (
+              <div className={styles.loadMoreContainer}>
+                <button
+                  className={styles.loadMoreButton}
+                  onClick={loadMoreHistory}
+                  disabled={isLoadingHistory}
+                >
+                  {isLoadingHistory ? '불러오는 중...' : '📜 이전 대화내용 보기'}
+                </button>
+              </div>
+            )}
+            
             {messages.map((message) => (
               <div
                 key={message.id}
