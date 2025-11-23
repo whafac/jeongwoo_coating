@@ -101,6 +101,22 @@ const answers: Record<string, { text: string; nextButtons?: string }> = {
   },
 };
 
+// 세션 토큰 관리 함수
+const getSessionToken = (): string => {
+  if (typeof window === 'undefined') {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+  
+  const stored = localStorage.getItem('chatbot_session_token');
+  if (stored) {
+    return stored;
+  }
+  
+  const newToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  localStorage.setItem('chatbot_session_token', newToken);
+  return newToken;
+};
+
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -115,6 +131,8 @@ export default function Chatbot() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
+  const [sessionToken] = useState<string>(getSessionToken());
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -124,6 +142,47 @@ export default function Chatbot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 챗봇이 열릴 때 이전 대화 기록 불러오기
+  useEffect(() => {
+    if (isOpen && !historyLoaded) {
+      loadConversationHistory();
+    }
+  }, [isOpen, historyLoaded]);
+
+  // 대화 기록 불러오기 함수
+  const loadConversationHistory = async () => {
+    try {
+      const response = await fetch(`/api/chatbot/history?sessionToken=${sessionToken}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages && data.messages.length > 0) {
+          // 이전 대화 기록이 있으면 불러오기
+          const loadedMessages: Message[] = data.messages.map((msg: any, index: number) => ({
+            id: msg.id || `loaded_${index}`,
+            text: msg.text,
+            isUser: msg.isUser,
+            timestamp: new Date(msg.timestamp),
+            buttons: msg.isUser ? undefined : (index === data.messages.length - 1 ? questionCategories.main : undefined)
+          }));
+          
+          // 마지막 메시지가 봇 메시지면 버튼 추가
+          if (loadedMessages.length > 0 && !loadedMessages[loadedMessages.length - 1].isUser) {
+            loadedMessages[loadedMessages.length - 1].buttons = questionCategories.main;
+          }
+          
+          setMessages(loadedMessages);
+          setHistoryLoaded(true);
+        } else {
+          // 대화 기록이 없으면 초기 메시지만 표시
+          setHistoryLoaded(true);
+        }
+      }
+    } catch (error) {
+      console.error('대화 기록 불러오기 오류:', error);
+      setHistoryLoaded(true);
+    }
+  };
 
   const handleButtonClick = async (buttonId: string, buttonLabel: string, category?: string) => {
     const userMessage: Message = {
@@ -192,8 +251,6 @@ export default function Chatbot() {
 
     // AI 응답이 필요한 경우
     try {
-      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
       // 견적 관련 질문인지 확인
       const isQuote = buttonId.startsWith('quote-') || category?.startsWith('quote');
       
@@ -258,8 +315,6 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
       // 대화 기록에서 견적 문의 컨텍스트 확인
       const recentMessages = messages.slice(-5).filter(m => !m.isUser);
       const isQuoteContext = recentMessages.some(m => 
@@ -327,8 +382,6 @@ export default function Chatbot() {
     setFeedbackSubmitting(messageId);
     
     try {
-      const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
       const response = await fetch('/api/chatbot/feedback', {
         method: 'POST',
         headers: {
