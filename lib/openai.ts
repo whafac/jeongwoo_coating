@@ -100,54 +100,41 @@ export function getQuotePromptSync(context: string = ''): string {
 export { DEFAULT_QUOTE_PROMPT };
 
 // 견적 관련 기본 답변 생성 함수 (API 키 없을 때 사용)
-export function generateQuoteResponse(userMessage: string): string {
-  const message = userMessage.toLowerCase();
-  
-  // UV 코팅 견적
-  if (message.includes('uv') || message.includes('코팅')) {
-    if (message.includes('명함')) {
-      return '명함 UV 코팅 견적 안내:\n\n📏 크기: 명함 (90x50mm 기준)\n💰 단가: 약 300-500원/매\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n  • 1,000매 이상: 30% 할인\n\n예시: 1,000매 주문 시 약 350-500원/매\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-    }
-    return '✨ UV 코팅 견적 안내:\n\n📏 기본 단가: A4 기준 약 500-1,000원/매\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n  • 1,000매 이상: 30% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-  }
-  
-  // 라미네이팅 견적
-  if (message.includes('라미네이팅') || message.includes('라미')) {
-    const isGlossy = message.includes('유광');
-    const isMatte = message.includes('무광');
+// 이제 데이터베이스에서 프롬프트를 가져와서 사용합니다.
+export async function generateQuoteResponse(userMessage: string): Promise<string> {
+  try {
+    // 데이터베이스에서 프롬프트 가져오기
+    const prompt = await getQuotePrompt('');
     
-    if (isGlossy) {
-      return '📄 유광 라미네이팅 견적 안내:\n\n💰 단가: A4 기준 약 800-1,500원/매\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
+    // 프롬프트를 기반으로 간단한 답변 생성
+    // OpenAI API가 없을 때는 프롬프트 내용을 그대로 사용하거나 간단히 요약
+    const message = userMessage.toLowerCase();
+    
+    // 프롬프트에서 전화번호 추출 (프롬프트에 포함된 전화번호 사용)
+    const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+    const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+    
+    // 프롬프트 내용을 기반으로 답변 생성
+    if (message.includes('uv') || message.includes('코팅')) {
+      // 프롬프트에서 UV 코팅 정보 추출
+      const uvMatch = prompt.match(/UV 코팅[^]*?기본 단가[^]*?([0-9,]+-[0-9,]+원\/매)/);
+      const uvPrice = uvMatch ? uvMatch[1] : '500-1,000원/매';
+      return `✨ UV 코팅 견적 안내:\n\n📏 기본 단가: A4 기준 약 ${uvPrice}\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n  • 1,000매 이상: 30% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(${phone}) 또는 온라인 문의로 상세 견적을 받아보세요! 📞`;
     }
-    if (isMatte) {
-      return '📄 무광 라미네이팅 견적 안내:\n\n💰 단가: A4 기준 약 700-1,300원/매\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
+    
+    // 일반 견적 문의 - 프롬프트 내용 요약
+    if (message.includes('견적') || message.includes('가격') || message.includes('비용') || message.includes('단가')) {
+      // 프롬프트에서 주요 정보 추출
+      return `💰 견적 문의 안내:\n\n${prompt}\n\n정확한 견적을 위해서는:\n  • 인쇄 파일\n  • 수량\n  • 납기일\n\n위 정보를 알려주시면 빠른 견적을 제공해드립니다.\n전화(${phone}) 또는 온라인 문의로 상세 견적을 받아보세요! 📞`;
     }
-    return '📄 라미네이팅 견적 안내:\n\n💰 단가:\n  • 유광 라미네이팅: A4 기준 약 800-1,500원/매\n  • 무광 라미네이팅: A4 기준 약 700-1,300원/매\n\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 유광/무광 선택\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
+    
+    // 기본 안내
+    return `견적 문의를 도와드리겠습니다!\n\n${prompt}\n\n궁금한 점이 있으시면 전화(${phone}) 또는 온라인 문의로 연락해 주세요! 📞`;
+  } catch (error) {
+    console.error('프롬프트 기반 답변 생성 오류:', error);
+    // 오류 발생 시 기본 답변
+    return '견적 문의를 도와드리겠습니다! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의로 연락해 주세요.';
   }
-  
-  // 박 코팅 견적
-  if (message.includes('박') || message.includes('금박') || message.includes('은박')) {
-    if (message.includes('금박')) {
-      return '🌟 금박 코팅 견적 안내:\n\n💰 단가: A4 기준 약 2,000-3,000원/매\n📦 수량별 할인:\n  • 50매 이상: 15% 할인\n  • 100매 이상: 25% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 박 면적\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-    }
-    if (message.includes('은박')) {
-      return '🌟 은박 코팅 견적 안내:\n\n💰 단가: A4 기준 약 1,800-2,800원/매\n📦 수량별 할인:\n  • 50매 이상: 15% 할인\n  • 100매 이상: 25% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 박 면적\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-    }
-    return '🌟 박 코팅 견적 안내:\n\n💰 단가:\n  • 금박: A4 기준 약 2,000-3,000원/매\n  • 은박: A4 기준 약 1,800-2,800원/매\n  • 홀로그램 박: A4 기준 약 2,500-3,500원/매\n\n📦 수량별 할인:\n  • 50매 이상: 15% 할인\n  • 100매 이상: 25% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 박 종류 및 면적\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-  }
-  
-  // 형압 가공 견적
-  if (message.includes('형압')) {
-    return '🎨 형압 가공 견적 안내:\n\n💰 단가: A4 기준 약 1,500-2,500원/매\n📦 수량별 할인:\n  • 100매 이상: 10% 할인\n  • 500매 이상: 20% 할인\n\n📋 견적에 필요한 정보:\n  • 인쇄물 종류 및 크기\n  • 형압 종류 (양각/음각)\n  • 형압 면적 및 난이도\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-  }
-  
-  // 일반 견적 문의
-  if (message.includes('견적') || message.includes('가격') || message.includes('비용') || message.includes('단가')) {
-    return '💰 견적 문의 안내:\n\n정우특수코팅의 견적은 다음과 같이 산정됩니다:\n\n✨ **UV 코팅**: A4 기준 약 500-1,000원/매\n📄 **라미네이팅**: 유광 800-1,500원/매, 무광 700-1,300원/매\n🌟 **박 코팅**: 금박 2,000-3,000원/매, 은박 1,800-2,800원/매\n🎨 **형압 가공**: A4 기준 약 1,500-2,500원/매\n\n📦 수량이 많을수록 할인율이 높아집니다!\n\n정확한 견적을 위해서는:\n  • 인쇄 파일\n  • 수량\n  • 납기일\n\n위 정보를 알려주시면 빠른 견적을 제공해드립니다.\n전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
-  }
-  
-  // 기본 견적 안내
-  return '견적 문의를 도와드리겠습니다! 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n📋 필요한 정보:\n  • 코팅 종류 (UV 코팅, 라미네이팅, 박 코팅, 형압 가공)\n  • 인쇄물 종류 및 크기\n  • 수량\n  • 납기일\n\n정확한 견적은 파일 확인 후 가능합니다. 전화(02-1234-5678) 또는 온라인 문의로 상세 견적을 받아보세요! 📞';
 }
 
 // 챗봇 응답 생성 함수
@@ -157,9 +144,9 @@ export async function generateChatbotResponse(
   conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = [],
   isQuoteInquiry: boolean = false
 ): Promise<string> {
-  // 견적 문의인 경우 API 키가 없어도 기본 견적 답변 제공
+  // 견적 문의인 경우 API 키가 없어도 기본 견적 답변 제공 (데이터베이스 프롬프트 사용)
   if (isQuoteInquiry && !openai) {
-    return generateQuoteResponse(userMessage);
+    return await generateQuoteResponse(userMessage);
   }
   
   // OpenAI API 키가 없는 경우 기본 응답 반환

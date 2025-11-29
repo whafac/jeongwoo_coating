@@ -81,8 +81,13 @@ export async function POST(request: NextRequest) {
         
       } catch (aiError) {
         console.error('AI 응답 생성 실패:', aiError);
-        // 견적 문의인 경우 견적 기본 답변 사용
-        botResponse = isQuote ? generateQuoteResponse(message) : generateBasicResponse(message);
+        // 견적 문의인 경우 데이터베이스 프롬프트 기반 답변 사용
+        if (isQuote) {
+          const { generateQuoteResponse } = await import('@/lib/openai');
+          botResponse = await generateQuoteResponse(message);
+        } else {
+          botResponse = await generateBasicResponse(message);
+        }
       }
     }
     
@@ -228,14 +233,24 @@ function extractKeywords(query: string): string[] {
 }
 
 // 기본 응답 생성 함수 (개선된 버전)
-function generateBasicResponse(query: string): string {
+async function generateBasicResponse(query: string): Promise<string> {
   const queryLower = query.toLowerCase();
   
   // 정우특수코팅 기본 정보
   const companyInfo = `정우특수코팅은 1999년 설립된 인쇄코팅 후가공 전문 기업입니다. 20년 이상의 경험과 노하우를 바탕으로 최고의 서비스를 제공하고 있습니다.`;
   
-  // 질문 유형별 맞춤 응답
-  if (queryLower.includes('견적') || queryLower.includes('가격') || queryLower.includes('비용')) {
+  // 견적 문의인 경우 데이터베이스에서 프롬프트 가져오기
+  if (queryLower.includes('견적') || queryLower.includes('가격') || queryLower.includes('비용') || queryLower.includes('단가')) {
+    try {
+      const { getQuotePrompt } = await import('@/lib/openai');
+      const prompt = await getQuotePrompt('');
+      // 프롬프트에서 전화번호 추출
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      return `${companyInfo}\n\n견적 문의를 원하시는군요! 정확한 견적을 위해 전화(${phone}) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다.`;
+    } catch (error) {
+      console.error('프롬프트 가져오기 오류:', error);
+    }
     return `${companyInfo}\n\n견적 문의를 원하시는군요! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다.`;
   }
   
@@ -252,10 +267,30 @@ function generateBasicResponse(query: string): string {
   }
   
   if (queryLower.includes('연락처') || queryLower.includes('전화') || queryLower.includes('연락')) {
+    // 프롬프트에서 전화번호 가져오기
+    try {
+      const { getQuotePrompt } = await import('@/lib/openai');
+      const prompt = await getQuotePrompt('');
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      return `${companyInfo}\n\n연락처 정보를 원하시는군요! 정우특수코팅은 전화(${phone}), 이메일, 온라인 문의 폼을 통해 연락 가능합니다. 무료 상담 서비스를 제공하니 언제든 연락해 주세요.`;
+    } catch (error) {
+      console.error('프롬프트 가져오기 오류:', error);
+    }
     return `${companyInfo}\n\n연락처 정보를 원하시는군요! 정우특수코팅은 전화(02-1234-5678), 이메일, 온라인 문의 폼을 통해 연락 가능합니다. 무료 상담 서비스를 제공하니 언제든 연락해 주세요.`;
   }
   
   if (queryLower.includes('서비스') || queryLower.includes('코팅') || queryLower.includes('작업')) {
+    // 프롬프트에서 전화번호 가져오기
+    try {
+      const { getQuotePrompt } = await import('@/lib/openai');
+      const prompt = await getQuotePrompt('');
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      return `${companyInfo}\n\n정우특수코팅의 주요 서비스는 다음과 같습니다:\n• UV 코팅 - 빠른 건조와 뛰어난 광택감\n• 라미네이팅 - 유광, 무광, 벨벳 등 다양한 필름\n• 박 코팅 - 금박, 은박, 홀로그램 등\n• 형압 가공 - 양각, 음각으로 입체 효과\n\n더 자세한 정보는 전화(${phone})로 문의해 주세요.`;
+    } catch (error) {
+      console.error('프롬프트 가져오기 오류:', error);
+    }
     return `${companyInfo}\n\n정우특수코팅의 주요 서비스는 다음과 같습니다:\n• UV 코팅 - 빠른 건조와 뛰어난 광택감\n• 라미네이팅 - 유광, 무광, 벨벳 등 다양한 필름\n• 박 코팅 - 금박, 은박, 홀로그램 등\n• 형압 가공 - 양각, 음각으로 입체 효과\n\n더 자세한 정보는 전화(02-1234-5678)로 문의해 주세요.`;
   }
   
@@ -267,10 +302,20 @@ function generateBasicResponse(query: string): string {
     return `${companyInfo}\n\n정우특수코팅에서 제공하는 주요 코팅 서비스는 다음과 같습니다:\n\n🎨 **UV 코팅**\n• 빠른 건조 시간과 뛰어난 광택감\n• 명함, 카탈로그, 포스터 등에 적용\n• 내구성이 우수하여 오래도록 깨끗한 상태 유지\n\n📄 **라미네이팅**\n• 유광, 무광, 벨벳 등 다양한 필름 적용\n• 인쇄물 표면 보호 및 질감 향상\n• 책 표지, 패키지, 메뉴판 등에 최적\n\n✨ **박 코팅**\n• 금박, 은박, 홀로그램 박 등 다양한 종류\n• 화려하고 고급스러운 효과 연출\n• 명함, 초대장, 패키지 등에 활용\n\n🔳 **형압 가공**\n• 양각(돌출), 음각(들어감) 효과\n• 입체적인 시각 효과와 독특한 촉감\n• 로고, 텍스트, 패턴 등에 적용\n\n더 자세한 정보나 견적 문의는 전화(02-1234-5678)로 연락해 주세요!`;
   }
   
-  // 일반적인 응답
+  // 일반적인 응답 - 프롬프트에서 전화번호 가져오기
+  let phone = '02-1234-5678';
+  try {
+    const { getQuotePrompt } = await import('@/lib/openai');
+    const prompt = await getQuotePrompt('');
+    const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+    if (phoneMatch) phone = phoneMatch[1];
+  } catch (error) {
+    console.error('프롬프트 가져오기 오류:', error);
+  }
+  
   const responses = [
     `${companyInfo}\n\n좋은 질문입니다! 해당 내용에 대해 더 정확한 정보를 확인한 후 답변드리겠습니다. 정우특수코팅 담당자에게 직접 문의하시면 더 자세한 안내를 받으실 수 있습니다.`,
-    `${companyInfo}\n\n정우특수코팅의 전문 지식을 바탕으로 최선의 답변을 드리기 위해 학습 중입니다. 전화(02-1234-5678) 또는 온라인 문의를 통해 더 정확한 정보를 얻으실 수 있습니다.`,
+    `${companyInfo}\n\n정우특수코팅의 전문 지식을 바탕으로 최선의 답변을 드리기 위해 학습 중입니다. 전화(${phone}) 또는 온라인 문의를 통해 더 정확한 정보를 얻으실 수 있습니다.`,
     `${companyInfo}\n\n해당 질문에 대해 정확한 답변을 찾지 못했습니다. 정우특수코팅의 다양한 코팅 서비스(UV코팅, 라미네이팅, 박코팅, 형압)에 대해 더 구체적으로 질문해 주시거나, 직접 문의해 주세요.`
   ];
   
