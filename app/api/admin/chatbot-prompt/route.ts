@@ -4,18 +4,50 @@ import { supabase } from '@/lib/database';
 // 견적 프롬프트 조회
 export async function GET(request: NextRequest) {
   try {
-    // 정우특수코팅 회사 ID 가져오기
-    const { data: company } = await supabase
+    // 정우특수코팅 회사 ID 가져오기 (id 컬럼 사용)
+    const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('id')
-      .eq('company_code', 'jeongwoo')
+      .eq('id', 'jeongwoo')
       .single();
 
+    // 회사가 없으면 생성
+    if (!company && !companyError) {
+      const { data: newCompany, error: insertError } = await supabase
+        .from('companies')
+        .insert({
+          id: 'jeongwoo',
+          name: '정우특수코팅',
+          domain: 'jeongwoo-coating.vercel.app'
+        })
+        .select('id')
+        .single();
+
+      if (insertError || !newCompany) {
+        console.error('회사 생성 오류:', insertError);
+        // 회사 생성 실패해도 기본 프롬프트 반환
+        const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
+        return NextResponse.json({
+          quotePrompt: DEFAULT_QUOTE_PROMPT,
+          lastUpdated: null
+        });
+      }
+
+      // 새로 생성된 회사로 설정 조회 (없으므로 기본값 반환)
+      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
+      return NextResponse.json({
+        quotePrompt: DEFAULT_QUOTE_PROMPT,
+        lastUpdated: null
+      });
+    }
+
     if (!company) {
-      return NextResponse.json(
-        { error: '회사를 찾을 수 없습니다.' },
-        { status: 404 }
-      );
+      // 회사 조회 실패 시 기본 프롬프트 반환
+      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
+      return NextResponse.json({
+        quotePrompt: DEFAULT_QUOTE_PROMPT,
+        lastUpdated: null
+      });
     }
 
     // chatbot_settings 테이블에서 프롬프트 조회
@@ -61,16 +93,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 정우특수코팅 회사 ID 가져오기
-    const { data: company } = await supabase
+    // 정우특수코팅 회사 ID 가져오기 (id 컬럼 사용)
+    let { data: company, error: companyError } = await supabase
       .from('companies')
       .select('id')
-      .eq('company_code', 'jeongwoo')
+      .eq('id', 'jeongwoo')
       .single();
+
+    // 회사가 없으면 생성
+    if (!company && !companyError) {
+      const { data: newCompany, error: insertError } = await supabase
+        .from('companies')
+        .insert({
+          id: 'jeongwoo',
+          name: '정우특수코팅',
+          domain: 'jeongwoo-coating.vercel.app'
+        })
+        .select('id')
+        .single();
+
+      if (insertError || !newCompany) {
+        console.error('회사 생성 오류:', insertError);
+        return NextResponse.json(
+          { error: '회사 정보를 설정할 수 없습니다. 데이터베이스를 확인해주세요.' },
+          { status: 500 }
+        );
+      }
+
+      company = newCompany;
+    }
 
     if (!company) {
       return NextResponse.json(
-        { error: '회사를 찾을 수 없습니다.' },
+        { error: '회사를 찾을 수 없습니다. 데이터베이스를 확인해주세요.' },
         { status: 404 }
       );
     }
@@ -120,12 +175,17 @@ export async function POST(request: NextRequest) {
       lastUpdated: new Date().toISOString()
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('프롬프트 저장 오류:', error);
+    const errorMessage = error?.message || '알 수 없는 오류';
     return NextResponse.json(
-      { error: '프롬프트 저장에 실패했습니다.' },
+      { 
+        error: '프롬프트 저장에 실패했습니다.',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }
 }
+
 

@@ -32,12 +32,26 @@
 2. SQL 에디터에 붙여넣기
 3. **"Run"** 버튼 클릭
 
-### **3단계: 테이블 확인**
+### **3단계: 챗봇 관련 테이블 생성**
+1. `supabase-chatbot-tables.sql` 파일 내용을 복사
+2. SQL 에디터에 붙여넣기
+3. **"Run"** 버튼 클릭
+
+### **4단계: 챗봇 설정 테이블 생성**
+1. `supabase-chatbot-settings.sql` 파일 내용을 복사
+2. SQL 에디터에 붙여넣기
+3. **"Run"** 버튼 클릭
+
+### **5단계: 테이블 확인**
 1. **"Table Editor"** 클릭
 2. 다음 테이블들이 생성되었는지 확인:
    - `companies`
    - `users`
    - `posts`
+   - `chatbot_sessions`
+   - `chatbot_messages`
+   - `chatbot_knowledge_base`
+   - `chatbot_settings` ⭐ (관리자 프롬프트 저장용)
 
 ---
 
