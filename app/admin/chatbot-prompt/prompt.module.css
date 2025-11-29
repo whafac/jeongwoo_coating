@@ -141,12 +141,13 @@
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   line-height: 1.6;
   resize: vertical;
-  min-height: 600px;
-  max-height: 80vh;
+  min-height: 800px;
+  max-height: none;
   overflow-y: auto;
   box-sizing: border-box;
   white-space: pre-wrap;
   word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .promptTextarea:focus {

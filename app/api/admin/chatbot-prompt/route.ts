@@ -58,18 +58,41 @@ export async function GET(request: NextRequest) {
       .eq('setting_key', 'quote_prompt')
       .single();
 
+    // 에러 로깅 추가
+    if (fetchError) {
+      console.error('프롬프트 조회 에러:', fetchError);
+      console.error('에러 코드:', fetchError.code);
+      console.error('에러 메시지:', fetchError.message);
+      console.error('에러 상세:', fetchError.details);
+    }
+
+    // settings가 없거나 에러가 발생한 경우
     if (fetchError || !settings) {
+      // 에러가 발생했지만 데이터가 없는 경우 (PGRST116)는 기본 프롬프트 반환
+      if (fetchError && fetchError.code === 'PGRST116') {
+        console.log('⚠️ DB에 프롬프트가 저장되어 있지 않습니다. 기본 프롬프트를 반환합니다.');
+      } else if (fetchError) {
+        console.error('⚠️ 프롬프트 조회 중 오류 발생:', fetchError);
+      }
+      
       // 기본 프롬프트 반환
       const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
       return NextResponse.json({
         quotePrompt: DEFAULT_QUOTE_PROMPT,
-        lastUpdated: null
+        lastUpdated: null,
+        isDefault: true // 기본값인지 표시
       });
     }
 
+    // DB에서 프롬프트를 성공적으로 가져온 경우
+    const promptValue = settings.setting_value as string;
+    console.log('✅ DB에서 프롬프트를 성공적으로 가져왔습니다.');
+    console.log('프롬프트 길이:', promptValue?.length || 0, '자');
+    
     return NextResponse.json({
-      quotePrompt: settings.setting_value as string,
-      lastUpdated: settings.updated_at
+      quotePrompt: promptValue,
+      lastUpdated: settings.updated_at,
+      isDefault: false
     });
 
   } catch (error) {

@@ -41,9 +41,14 @@ export default function ChatbotPromptPage() {
   // textarea 높이 자동 조정
   useEffect(() => {
     const textarea = document.querySelector(`.${styles.promptTextarea}`) as HTMLTextAreaElement;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${Math.max(600, textarea.scrollHeight)}px`;
+    if (textarea && promptData.quotePrompt) {
+      // 약간의 지연을 두고 높이 조정 (렌더링 완료 후)
+      setTimeout(() => {
+        textarea.style.height = 'auto';
+        const newHeight = Math.max(800, textarea.scrollHeight + 100);
+        textarea.style.height = `${newHeight}px`;
+        console.log('📏 textarea 높이 조정:', newHeight, 'px, 내용 길이:', promptData.quotePrompt.length);
+      }, 100);
     }
   }, [promptData.quotePrompt]);
 
@@ -51,19 +56,31 @@ export default function ChatbotPromptPage() {
     try {
       setLoading(true);
       const response = await fetch('/api/admin/chatbot-prompt');
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
-        if (data.quotePrompt) {
-          setPromptData(data);
+        if (data.quotePrompt && data.quotePrompt.trim().length > 0) {
+          console.log('✅ 프롬프트 로드 성공:', {
+            길이: data.quotePrompt.length,
+            기본값여부: data.isDefault ? '기본값' : 'DB값',
+            마지막수정: data.lastUpdated
+          });
+          setPromptData({
+            quotePrompt: data.quotePrompt,
+            lastUpdated: data.lastUpdated
+          });
         } else {
-          // 기본 프롬프트 로드
+          console.warn('⚠️ 프롬프트가 비어있습니다. 기본 프롬프트를 로드합니다.');
           await loadDefaultPrompt();
         }
       } else {
+        console.error('❌ API 응답 오류:', data.error);
+        setMessage('⚠️ 프롬프트를 불러오는 중 오류가 발생했습니다: ' + (data.error || '알 수 없는 오류'));
         await loadDefaultPrompt();
       }
     } catch (error) {
-      console.error('프롬프트 로드 오류:', error);
+      console.error('❌ 프롬프트 로드 오류:', error);
+      setMessage('⚠️ 프롬프트를 불러오는 중 네트워크 오류가 발생했습니다.');
       await loadDefaultPrompt();
     } finally {
       setLoading(false);
@@ -254,20 +271,25 @@ export default function ChatbotPromptPage() {
               placeholder="견적 프롬프트를 입력하세요..."
               style={{ 
                 height: 'auto',
-                minHeight: '600px'
+                minHeight: '800px'
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
-                target.style.height = `${Math.max(600, target.scrollHeight)}px`;
+                target.style.height = `${Math.max(800, target.scrollHeight + 50)}px`;
               }}
             />
 
             <div className={styles.editorFooter}>
-              <p>문자 수: {promptData.quotePrompt.length}자</p>
-              {promptData.lastUpdated && (
-                <p>마지막 수정: {new Date(promptData.lastUpdated).toLocaleString('ko-KR')}</p>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <p>문자 수: {promptData.quotePrompt.length}자</p>
+                {promptData.lastUpdated && (
+                  <p>마지막 수정: {new Date(promptData.lastUpdated).toLocaleString('ko-KR')}</p>
+                )}
+                {promptData.quotePrompt.length === 0 && (
+                  <p style={{ color: '#f44336' }}>⚠️ 프롬프트가 비어있습니다. 기본 프롬프트를 로드하거나 새로 입력해주세요.</p>
+                )}
+              </div>
             </div>
           </div>
 
