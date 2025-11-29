@@ -18,6 +18,7 @@ interface QuickButton {
   id: string;
   label: string;
   action?: string;
+  category?: string;
 }
 
 // 질문 카테고리와 답변 정의
