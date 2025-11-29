@@ -38,6 +38,15 @@ export default function ChatbotPromptPage() {
     fetchPrompt();
   }, []);
 
+  // textarea 높이 자동 조정
+  useEffect(() => {
+    const textarea = document.querySelector(`.${styles.promptTextarea}`) as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.max(600, textarea.scrollHeight)}px`;
+    }
+  }, [promptData.quotePrompt]);
+
   const fetchPrompt = async () => {
     try {
       setLoading(true);
@@ -243,7 +252,15 @@ export default function ChatbotPromptPage() {
               onChange={(e) => setPromptData(prev => ({ ...prev, quotePrompt: e.target.value }))}
               className={styles.promptTextarea}
               placeholder="견적 프롬프트를 입력하세요..."
-              rows={30}
+              style={{ 
+                height: 'auto',
+                minHeight: '600px'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${Math.max(600, target.scrollHeight)}px`;
+              }}
             />
 
             <div className={styles.editorFooter}>

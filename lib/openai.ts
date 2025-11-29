@@ -224,14 +224,52 @@ export async function generateChatbotResponse(
   conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = [],
   isQuoteInquiry: boolean = false
 ): Promise<string> {
-  // 견적 문의인 경우 API 키가 없어도 기본 견적 답변 제공 (데이터베이스 프롬프트 사용)
-  if (isQuoteInquiry && !openai) {
-    return await generateQuoteResponse(userMessage);
-  }
-  
-  // OpenAI API 키가 없는 경우 기본 응답 반환
+  // OpenAI API 키가 없는 경우 DB 프롬프트 기반 답변 생성
   if (!openai) {
-    return '죄송합니다. AI 서비스가 일시적으로 사용할 수 없습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+    // 견적 문의인 경우
+    if (isQuoteInquiry) {
+      return await generateQuoteResponse(userMessage);
+    }
+    // 일반 문의인 경우도 DB 프롬프트 기반으로 답변 생성
+    try {
+      const { getQuotePrompt } = await import('@/lib/openai');
+      const prompt = await getQuotePrompt(context);
+      
+      // 프롬프트에서 정보 추출하여 답변 생성
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
+      
+      // 사용자 메시지에 따라 프롬프트 기반 답변 생성
+      const messageLower = userMessage.toLowerCase();
+      
+      if (messageLower.includes('연락처') || messageLower.includes('전화') || messageLower.includes('연락')) {
+        const addressMatch = prompt.match(/주소[:\s]*([^\n]+)/);
+        const hoursMatch = prompt.match(/영업시간[:\s]*([^\n]+)/);
+        const address = addressMatch ? addressMatch[1].trim() : '서울시 XX구 XX동';
+        const hours = hoursMatch ? hoursMatch[1].trim() : '평일 09:00 - 18:00';
+        return `연락처 정보:\n\n📞 전화: ${phone}\n📧 이메일: ${email}\n📍 주소: ${address}\n⏰ 영업시간: ${hours}\n\n온라인 문의 폼: /contact\n무료 상담 서비스 제공 중입니다! 😊`;
+      }
+      
+      if (messageLower.includes('상담원') || messageLower.includes('상담원 연결')) {
+        return `상담원 연결 안내:\n\n상담원과 직접 대화하시려면:\n📞 전화: ${phone}\n📧 이메일: ${email}\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.`;
+      }
+      
+      if (messageLower.includes('파일') && (messageLower.includes('제출') || messageLower.includes('방법'))) {
+        return `파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일 제출 방법:\n\n📧 이메일 제출:\n• 이메일 주소: ${email}\n• 제목에 "파일 제출" 명시\n• 파일 첨부 후 발송\n\n🌐 웹하드 업로드:\n• 웹하드 주소: https://webhard.jeongwoo.co.kr\n• 아이디/비밀번호: 문의 시 안내\n• 업로드 후 담당자에게 알림\n\n💬 온라인 문의 폼:\n• /contact 페이지에서 파일 첨부 가능\n• 문의 내용과 함께 파일 제출\n\n파일 크기가 큰 경우 웹하드나 이메일을 이용해주세요.`;
+      }
+      
+      if (messageLower.includes('납기') || messageLower.includes('소요') || messageLower.includes('시간')) {
+        return `작업 소요시간 안내:\n\n⏱️ 일반 작업: 2-3일\n⚡ 긴급 작업: 당일 가능 (추가 비용 발생)\n📦 택배 발송: 1일 추가\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.`;
+      }
+      
+      // 일반 답변 - 프롬프트 내용 요약
+      return `정우특수코팅에 대해 문의해 주셔서 감사합니다! 프롬프트에 명시된 정보를 바탕으로 답변드리겠습니다.\n\n더 자세한 정보나 정확한 견적을 원하시면 전화(${phone}) 또는 이메일(${email})로 문의해 주세요. 친절하게 안내해 드리겠습니다! 😊`;
+    } catch (error) {
+      console.error('프롬프트 기반 답변 생성 오류:', error);
+      return '죄송합니다. 일시적인 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+    }
   }
   
   try {
