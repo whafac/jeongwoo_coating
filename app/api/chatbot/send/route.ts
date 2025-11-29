@@ -110,11 +110,11 @@ export async function POST(request: NextRequest) {
 // 지식베이스 검색 함수 (개선된 버전)
 async function searchKnowledgeBase(query: string): Promise<string | null> {
   try {
-    // 정우특수코팅 회사 ID 가져오기
+    // 정우특수코팅 회사 ID 가져오기 (id 컬럼 사용)
     const { data: company } = await supabase
       .from('companies')
       .select('id')
-      .eq('company_code', 'jeongwoo')
+      .eq('id', 'jeongwoo')
       .single();
 
     if (!company) return null;
@@ -314,7 +314,7 @@ async function getCompanyContext(): Promise<string> {
     const { data: company } = await supabase
       .from('companies')
       .select('id')
-      .eq('company_code', 'jeongwoo')
+      .eq('id', 'jeongwoo')
       .single();
 
     if (!company) return process.env.CHATBOT_COMPANY_CONTEXT || '';
@@ -352,7 +352,7 @@ async function saveChatMessage(sessionToken: string, messageType: string, conten
       const { data: company } = await supabase
         .from('companies')
         .select('id')
-        .eq('company_code', 'jeongwoo')
+        .eq('id', 'jeongwoo')
         .single();
 
       if (!company) return;

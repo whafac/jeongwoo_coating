@@ -57,14 +57,15 @@ export async function getQuotePrompt(context: string = ''): Promise<string> {
   try {
     // 데이터베이스에서 프롬프트 가져오기 시도
     const { supabase } = await import('@/lib/database');
-    const { data: company } = await supabase
+    // id 컬럼 사용 (company_code가 아닌 id로 조회)
+    const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('id')
-      .eq('company_code', 'jeongwoo')
+      .eq('id', 'jeongwoo')
       .single();
 
     if (company) {
-      const { data: settings } = await supabase
+      const { data: settings, error: settingsError } = await supabase
         .from('chatbot_settings')
         .select('setting_value')
         .eq('company_id', company.id)
@@ -73,14 +74,20 @@ export async function getQuotePrompt(context: string = ''): Promise<string> {
 
       if (settings?.setting_value) {
         const prompt = settings.setting_value as string;
+        console.log('✅ 데이터베이스에서 프롬프트를 성공적으로 가져왔습니다.');
         return context ? `${prompt}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : prompt;
+      } else {
+        console.log('⚠️ chatbot_settings에서 프롬프트를 찾을 수 없습니다. 기본 프롬프트 사용:', settingsError?.message);
       }
+    } else {
+      console.log('⚠️ 회사를 찾을 수 없습니다. 기본 프롬프트 사용:', companyError?.message);
     }
   } catch (error) {
     console.error('프롬프트 가져오기 오류:', error);
   }
 
   // 데이터베이스에서 가져오지 못한 경우 기본 프롬프트 사용
+  console.log('ℹ️ 기본 프롬프트를 사용합니다.');
   return context ? `${DEFAULT_QUOTE_PROMPT}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : DEFAULT_QUOTE_PROMPT;
 }
 
