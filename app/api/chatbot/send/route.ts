@@ -264,7 +264,13 @@ async function generateBasicResponse(query: string): Promise<string> {
     // 프롬프트에 모든 정보가 포함되어 있으므로, 프롬프트 내용을 참조하여 답변 생성
     
     if (queryLower.includes('시간') || queryLower.includes('소요') || queryLower.includes('납기')) {
-      // 프롬프트의 작업 프로세스 섹션 참조
+      // 프롬프트에서 납기일 관련 내용 찾기
+      const deliveryMatch = prompt.match(/납기일[^]*?(?=\n\n|$)/i) || prompt.match(/작업 프로세스[^]*?(?=\n\n|$)/i);
+      if (deliveryMatch) {
+        // 프롬프트에 납기일 내용이 있으면 사용
+        return `작업 소요시간 안내:\n\n${deliveryMatch[0]}\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.`;
+      }
+      // 프롬프트에 없으면 기본 답변
       return `${companyInfo}\n\n작업 소요시간에 대해 문의하시는군요! 프롬프트에 명시된 정보에 따르면 일반적인 코팅 작업은 2-3일 소요되며, 긴급 작업의 경우 당일 가능합니다. 작업량과 난이도에 따라 달라질 수 있으니 상세한 문의 부탁드립니다.`;
     }
     
@@ -282,10 +288,16 @@ async function generateBasicResponse(query: string): Promise<string> {
   }
   
   if (queryLower.includes('연락처') || queryLower.includes('전화') || queryLower.includes('연락') || queryLower.includes('연락처 안내')) {
-    // 프롬프트에서 전화번호와 이메일 가져오기
+    // 프롬프트에서 연락처 안내 관련 내용 찾기
     try {
       const { getQuotePrompt } = await import('@/lib/openai');
       const prompt = await getQuotePrompt('');
+      const contactMatch = prompt.match(/연락처 안내[^]*?(?=\n\n|$)/i);
+      if (contactMatch) {
+        // 프롬프트에 연락처 안내 내용이 있으면 사용
+        return contactMatch[0];
+      }
+      // 프롬프트에 없으면 기본 답변
       const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
       const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
       const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
@@ -298,10 +310,20 @@ async function generateBasicResponse(query: string): Promise<string> {
   }
   
   if (queryLower.includes('상담원') || queryLower.includes('상담원 연결')) {
-    // 프롬프트에서 전화번호와 이메일 가져오기
+    // 프롬프트에서 상담원 연결 관련 내용 찾기
     try {
       const { getQuotePrompt } = await import('@/lib/openai');
       const prompt = await getQuotePrompt('');
+      const agentMatch = prompt.match(/상담원[^]*?(?:전화|이메일|연락)[^]*?(?=\n\n|$)/i);
+      if (agentMatch) {
+        // 프롬프트에 상담원 연결 내용이 있으면 사용
+        const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+        const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
+        const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+        const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
+        return `상담원 연결 안내:\n\n${agentMatch[0]}\n\n상담원과 직접 대화하시려면:\n📞 전화: ${phone}\n📧 이메일: ${email}\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.`;
+      }
+      // 프롬프트에 없으면 기본 답변
       const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
       const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
       const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
@@ -314,10 +336,16 @@ async function generateBasicResponse(query: string): Promise<string> {
   }
   
   if (queryLower.includes('파일') && (queryLower.includes('제출') || queryLower.includes('방법'))) {
-    // 프롬프트에서 이메일 가져오기
+    // 프롬프트에서 파일 제출 방법 관련 내용 찾기
     try {
       const { getQuotePrompt } = await import('@/lib/openai');
       const prompt = await getQuotePrompt('');
+      const fileMatch = prompt.match(/파일 제출 방법[^]*?(?=\n\n|$)/i);
+      if (fileMatch) {
+        // 프롬프트에 파일 제출 방법 내용이 있으면 사용
+        return fileMatch[0];
+      }
+      // 프롬프트에 없으면 기본 답변
       const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
       const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
       return `파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일 제출 방법:\n\n📧 이메일 제출:\n• 이메일 주소: ${email}\n• 제목에 "파일 제출" 명시\n• 파일 첨부 후 발송\n\n🌐 웹하드 업로드:\n• 웹하드 주소: https://webhard.jeongwoo.co.kr\n• 아이디/비밀번호: 문의 시 안내\n• 업로드 후 담당자에게 알림\n\n💬 온라인 문의 폼:\n• /contact 페이지에서 파일 첨부 가능\n• 문의 내용과 함께 파일 제출\n\n파일 크기가 큰 경우 웹하드나 이메일을 이용해주세요.`;

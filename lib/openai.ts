@@ -244,7 +244,18 @@ export async function generateChatbotResponse(
       // 사용자 메시지에 따라 프롬프트 기반 답변 생성
       const messageLower = userMessage.toLowerCase();
       
-      if (messageLower.includes('연락처') || messageLower.includes('전화') || messageLower.includes('연락')) {
+      if (messageLower.includes('연락처') || messageLower.includes('전화') || messageLower.includes('연락') || messageLower.includes('연락처 안내')) {
+        // 프롬프트에서 연락처 안내 관련 내용 찾기
+        const contactMatch = prompt.match(/연락처 안내[^]*?(?=\n\n|$)/i);
+        if (contactMatch) {
+          // 프롬프트에 연락처 안내 내용이 있으면 사용
+          let contactResponse = contactMatch[0];
+          // 전화번호와 이메일을 프롬프트에서 추출한 것으로 교체
+          contactResponse = contactResponse.replace(/02-[0-9-]+/g, phone);
+          contactResponse = contactResponse.replace(/info@[^\s]+/g, email);
+          return contactResponse;
+        }
+        // 프롬프트에 없으면 기본 답변
         const addressMatch = prompt.match(/주소[:\s]*([^\n]+)/);
         const hoursMatch = prompt.match(/영업시간[:\s]*([^\n]+)/);
         const address = addressMatch ? addressMatch[1].trim() : '서울시 XX구 XX동';
@@ -253,14 +264,38 @@ export async function generateChatbotResponse(
       }
       
       if (messageLower.includes('상담원') || messageLower.includes('상담원 연결')) {
+        // 프롬프트에서 상담원 연결 관련 내용 찾기
+        const agentMatch = prompt.match(/상담원[^]*?(?:전화|이메일|연락)[^]*?(?:\n|$)/i);
+        if (agentMatch) {
+          // 프롬프트에 상담원 연결 내용이 있으면 사용
+          return `상담원 연결 안내:\n\n${agentMatch[0]}\n\n상담원과 직접 대화하시려면:\n📞 전화: ${phone}\n📧 이메일: ${email}\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.`;
+        }
+        // 프롬프트에 없으면 기본 답변
         return `상담원 연결 안내:\n\n상담원과 직접 대화하시려면:\n📞 전화: ${phone}\n📧 이메일: ${email}\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.`;
       }
       
       if (messageLower.includes('파일') && (messageLower.includes('제출') || messageLower.includes('방법'))) {
+        // 프롬프트에서 파일 제출 방법 관련 내용 찾기
+        const fileMatch = prompt.match(/파일 제출 방법[^]*?(?=\n\n|$)/i);
+        if (fileMatch) {
+          // 프롬프트에 파일 제출 방법 내용이 있으면 사용
+          let fileResponse = fileMatch[0];
+          // 이메일 주소를 프롬프트에서 추출한 것으로 교체
+          fileResponse = fileResponse.replace(/info@[^\s]+/g, email);
+          return fileResponse;
+        }
+        // 프롬프트에 없으면 기본 답변
         return `파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일 제출 방법:\n\n📧 이메일 제출:\n• 이메일 주소: ${email}\n• 제목에 "파일 제출" 명시\n• 파일 첨부 후 발송\n\n🌐 웹하드 업로드:\n• 웹하드 주소: https://webhard.jeongwoo.co.kr\n• 아이디/비밀번호: 문의 시 안내\n• 업로드 후 담당자에게 알림\n\n💬 온라인 문의 폼:\n• /contact 페이지에서 파일 첨부 가능\n• 문의 내용과 함께 파일 제출\n\n파일 크기가 큰 경우 웹하드나 이메일을 이용해주세요.`;
       }
       
       if (messageLower.includes('납기') || messageLower.includes('소요') || messageLower.includes('시간')) {
+        // 프롬프트에서 납기일 관련 내용 찾기
+        const deliveryMatch = prompt.match(/납기일[^]*?(?=\n\n|$)/i) || prompt.match(/작업 프로세스[^]*?(?=\n\n|$)/i);
+        if (deliveryMatch) {
+          // 프롬프트에 납기일 내용이 있으면 사용
+          return `작업 소요시간 안내:\n\n${deliveryMatch[0]}\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.`;
+        }
+        // 프롬프트에 없으면 기본 답변
         return `작업 소요시간 안내:\n\n⏱️ 일반 작업: 2-3일\n⚡ 긴급 작업: 당일 가능 (추가 비용 발생)\n📦 택배 발송: 1일 추가\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.`;
       }
       
