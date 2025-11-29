@@ -61,11 +61,20 @@ export default function ChatbotPromptPage() {
       
       if (response.ok) {
         if (data.quotePrompt && data.quotePrompt.trim().length > 0) {
+          const promptLength = data.quotePrompt.length;
+          const promptPreview = data.quotePrompt.substring(0, 100) + '...';
+          
           console.log('✅ 프롬프트 로드 성공:', {
-            길이: data.quotePrompt.length,
+            길이: promptLength,
             기본값여부: data.isDefault ? '기본값' : 'DB값',
-            마지막수정: data.lastUpdated
+            마지막수정: data.lastUpdated,
+            미리보기: promptPreview
           });
+          
+          // 프롬프트 전체 내용 확인
+          console.log('📄 프롬프트 전체 내용 (처음 500자):', data.quotePrompt.substring(0, 500));
+          console.log('📄 프롬프트 전체 내용 (마지막 500자):', data.quotePrompt.substring(Math.max(0, promptLength - 500)));
+          
           setPromptData({
             quotePrompt: data.quotePrompt,
             lastUpdated: data.lastUpdated,
@@ -75,8 +84,20 @@ export default function ChatbotPromptPage() {
           // 프롬프트가 기본값인지 확인
           if (data.isDefault) {
             console.warn('⚠️ 기본 프롬프트를 사용 중입니다. DB에 저장된 프롬프트가 없거나 조회에 실패했습니다.');
+            console.warn('💡 기본 프롬프트 길이:', promptLength, '자');
           } else {
             console.log('✅ DB에서 저장된 프롬프트를 성공적으로 로드했습니다.');
+            console.log('💡 DB 프롬프트 길이:', promptLength, '자');
+            
+            // 기본 프롬프트 길이와 비교
+            const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
+            const defaultLength = DEFAULT_QUOTE_PROMPT.length;
+            console.log('📊 기본 프롬프트 길이:', defaultLength, '자');
+            console.log('📊 차이:', promptLength - defaultLength, '자');
+            
+            if (promptLength < defaultLength * 0.8) {
+              console.warn('⚠️ DB 프롬프트가 기본 프롬프트보다 훨씬 짧습니다. 일부 내용이 누락되었을 수 있습니다.');
+            }
           }
         } else {
           console.warn('⚠️ 프롬프트가 비어있습니다. 기본 프롬프트를 로드합니다.');
@@ -194,6 +215,59 @@ export default function ChatbotPromptPage() {
     }
   };
 
+  const handleCompareWithDefault = async () => {
+    try {
+      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
+      const currentLength = promptData.quotePrompt.length;
+      const defaultLength = DEFAULT_QUOTE_PROMPT.length;
+      
+      const comparison = {
+        현재프롬프트길이: currentLength,
+        기본프롬프트길이: defaultLength,
+        차이: defaultLength - currentLength,
+        비율: ((currentLength / defaultLength) * 100).toFixed(1) + '%'
+      };
+      
+      console.log('📊 프롬프트 비교 결과:', comparison);
+      
+      if (currentLength < defaultLength * 0.8) {
+        const shouldMerge = confirm(
+          `현재 프롬프트(${currentLength}자)가 기본 프롬프트(${defaultLength}자)보다 ${Math.round((1 - currentLength / defaultLength) * 100)}% 짧습니다.\n\n` +
+          `기본 프롬프트의 누락된 내용을 현재 프롬프트에 추가하시겠습니까?\n\n` +
+          `(현재 프롬프트는 유지되고, 기본 프롬프트의 추가 내용만 병합됩니다)`
+        );
+        
+        if (shouldMerge) {
+          // 기본 프롬프트의 내용을 현재 프롬프트에 병합
+          // 현재 프롬프트가 기본 프롬프트의 일부인지 확인
+          if (DEFAULT_QUOTE_PROMPT.includes(promptData.quotePrompt.substring(0, 100))) {
+            // 현재 프롬프트가 기본 프롬프트의 일부라면, 기본 프롬프트로 교체
+            setPromptData({
+              quotePrompt: DEFAULT_QUOTE_PROMPT,
+              lastUpdated: promptData.lastUpdated,
+              isDefault: false
+            });
+            setMessage('✅ 기본 프롬프트로 업데이트했습니다. 저장하기를 클릭하여 DB에 저장하세요.');
+          } else {
+            // 현재 프롬프트와 기본 프롬프트를 병합
+            const merged = `${promptData.quotePrompt}\n\n${DEFAULT_QUOTE_PROMPT}`;
+            setPromptData({
+              quotePrompt: merged,
+              lastUpdated: promptData.lastUpdated,
+              isDefault: false
+            });
+            setMessage('✅ 기본 프롬프트 내용을 현재 프롬프트에 추가했습니다. 저장하기를 클릭하여 DB에 저장하세요.');
+          }
+        }
+      } else {
+        alert(`현재 프롬프트(${currentLength}자)는 기본 프롬프트(${defaultLength}자)의 ${comparison.비율}입니다.\n\n차이가 크지 않으므로 추가 작업이 필요하지 않습니다.`);
+      }
+    } catch (error) {
+      console.error('프롬프트 비교 오류:', error);
+      setMessage('❌ 프롬프트 비교 중 오류가 발생했습니다.');
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -248,6 +322,14 @@ export default function ChatbotPromptPage() {
               <h2>견적 문의 프롬프트</h2>
               <div className={styles.editorActions}>
                 <button 
+                  onClick={handleCompareWithDefault}
+                  className={styles.resetButton}
+                  disabled={saving}
+                  style={{ background: '#ff9800', color: 'white', border: 'none' }}
+                >
+                  기본값과 비교
+                </button>
+                <button 
                   onClick={handleReset}
                   className={styles.resetButton}
                   disabled={saving}
@@ -272,14 +354,15 @@ export default function ChatbotPromptPage() {
                 <li>변경 후 저장하면 즉시 챗봇에 반영됩니다</li>
                 <li>프롬프트는 DB에 저장되며, 모든 챗봇 답변의 기준이 됩니다</li>
               </ul>
-              {process.env.NODE_ENV === 'development' && (
-                <div style={{ marginTop: '1rem', padding: '0.5rem', background: '#f0f0f0', borderRadius: '4px', fontSize: '12px' }}>
-                  <strong>디버그 정보:</strong>
-                  <br />프롬프트 길이: {promptData.quotePrompt.length}자
-                  <br />마지막 수정: {promptData.lastUpdated ? new Date(promptData.lastUpdated).toLocaleString('ko-KR') : '없음'}
-                  <br />브라우저 콘솔에서 상세 로그를 확인하세요.
-                </div>
-              )}
+              <div style={{ marginTop: '1rem', padding: '0.5rem', background: '#f0f0f0', borderRadius: '4px', fontSize: '12px' }}>
+                <strong>디버그 정보:</strong>
+                <br />프롬프트 길이: {promptData.quotePrompt.length}자
+                <br />마지막 수정: {promptData.lastUpdated ? new Date(promptData.lastUpdated).toLocaleString('ko-KR') : '없음'}
+                <br />상태: {promptData.isDefault ? '⚠️ 기본 프롬프트' : '✅ DB 프롬프트'}
+                <br />프롬프트 시작: {promptData.quotePrompt.substring(0, 50)}...
+                <br />프롬프트 끝: ...{promptData.quotePrompt.substring(Math.max(0, promptData.quotePrompt.length - 50))}
+                <br />브라우저 콘솔(F12)에서 상세 로그를 확인하세요.
+              </div>
             </div>
 
             <textarea
