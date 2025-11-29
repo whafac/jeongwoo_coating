@@ -25,28 +25,24 @@ export async function GET(request: NextRequest) {
 
       if (insertError || !newCompany) {
         console.error('회사 생성 오류:', insertError);
-        // 회사 생성 실패해도 기본 프롬프트 반환
-        const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
         return NextResponse.json({
-          quotePrompt: DEFAULT_QUOTE_PROMPT,
-          lastUpdated: null
+          quotePrompt: '',
+          lastUpdated: null,
+          isDefault: true
         });
       }
-
-      // 새로 생성된 회사로 설정 조회 (없으므로 기본값 반환)
-      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
       return NextResponse.json({
-        quotePrompt: DEFAULT_QUOTE_PROMPT,
-        lastUpdated: null
+        quotePrompt: '',
+        lastUpdated: null,
+        isDefault: true
       });
     }
 
     if (!company) {
-      // 회사 조회 실패 시 기본 프롬프트 반환
-      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
       return NextResponse.json({
-        quotePrompt: DEFAULT_QUOTE_PROMPT,
-        lastUpdated: null
+        quotePrompt: '',
+        lastUpdated: null,
+        isDefault: true
       });
     }
 
@@ -68,19 +64,16 @@ export async function GET(request: NextRequest) {
 
     // settings가 없거나 에러가 발생한 경우
     if (fetchError || !settings) {
-      // 에러가 발생했지만 데이터가 없는 경우 (PGRST116)는 기본 프롬프트 반환
       if (fetchError && fetchError.code === 'PGRST116') {
-        console.log('⚠️ DB에 프롬프트가 저장되어 있지 않습니다. 기본 프롬프트를 반환합니다.');
+        console.log('⚠️ DB에 프롬프트가 저장되어 있지 않습니다. 빈 프롬프트를 반환합니다.');
       } else if (fetchError) {
         console.error('⚠️ 프롬프트 조회 중 오류 발생:', fetchError);
       }
       
-      // 기본 프롬프트 반환
-      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
       return NextResponse.json({
-        quotePrompt: DEFAULT_QUOTE_PROMPT,
+        quotePrompt: '',
         lastUpdated: null,
-        isDefault: true // 기본값인지 표시
+        isDefault: true
       });
     }
 
