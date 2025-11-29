@@ -76,16 +76,16 @@ const answers: Record<string, { text: string; nextButtons?: string }> = {
     text: '작업 프로세스는 4단계로 진행됩니다:\n\n1️⃣ 상담 - 요구사항 확인\n2️⃣ 견적 - 비용 산정\n3️⃣ 작업 - 코팅 진행\n4️⃣ 납품 - 완제품 전달\n\n일반적으로 2-3일 소요되며, 급한 경우 당일 작업도 가능합니다.'
   },
   file: {
-    text: '파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일 제출 방법:\n\n📧 이메일 제출:\n• 이메일 주소: info@jeongwoo.co.kr\n• 제목에 "파일 제출" 명시\n• 파일 첨부 후 발송\n\n🌐 웹하드 업로드:\n• 웹하드 주소: https://webhard.jeongwoo.co.kr\n• 아이디/비밀번호: 문의 시 안내\n• 업로드 후 담당자에게 알림\n\n💬 온라인 문의 폼:\n• /contact 페이지에서 파일 첨부 가능\n• 문의 내용과 함께 파일 제출\n\n파일 크기가 큰 경우 웹하드나 이메일을 이용해주세요.'
+    text: '', // 동적으로 생성됨
   },
   delivery: {
     text: '작업 소요시간 안내:\n\n⏱️ 일반 작업: 2-3일\n⚡ 긴급 작업: 당일 가능 (추가 비용 발생)\n📦 택배 발송: 1일 추가\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.'
   },
   contact: {
-    text: '연락처 정보:\n\n📞 전화: 02-1234-5678\n📧 이메일: info@jeongwoo.co.kr\n📍 주소: 서울시 XX구 XX동\n⏰ 영업시간: 평일 09:00 - 18:00\n\n온라인 문의 폼: /contact\n무료 상담 서비스 제공 중입니다! 😊'
+    text: '', // 동적으로 생성됨
   },
   agent: {
-    text: '상담원 연결 안내:\n\n상담원과 직접 대화하시려면:\n📞 전화: 02-1234-5678\n📧 이메일: info@jeongwoo.co.kr\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.'
+    text: '', // 동적으로 생성됨
   },
   uv: {
     text: '✨ UV 코팅 서비스 안내:\n\n자외선(UV)으로 경화시키는 코팅 방식으로:\n• 빠른 건조 시간\n• 뛰어난 광택감\n• 우수한 내구성\n• 명함, 카탈로그, 포스터 등에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
@@ -295,7 +295,63 @@ export default function Chatbot() {
     // 즉시 답변이 있는 경우
     const answer = answers[answerKey];
     
-    if (answer) {
+    // contact, agent, file은 프롬프트에서 정보를 가져와야 하므로 API 호출
+    if (answerKey === 'contact' || answerKey === 'agent' || answerKey === 'file') {
+      // API를 통해 프롬프트 기반 답변 생성
+      try {
+        const response = await fetch('/api/chatbot/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: buttonLabel,
+            sessionToken: sessionToken,
+            isQuoteInquiry: false
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: data.message,
+            isUser: false,
+            timestamp: new Date(),
+            aiGenerated: data.aiUsed || false,
+            buttons: questionCategories.main
+          };
+          setMessages(prev => [...prev, botMessage]);
+        } else {
+          throw new Error(data.error || '응답을 받을 수 없습니다.');
+        }
+      } catch (error) {
+        console.error('챗봇 API 오류:', error);
+        // 폴백 답변
+        let fallbackText = '';
+        if (answerKey === 'contact') {
+          fallbackText = '연락처 정보를 확인하는 중 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+        } else if (answerKey === 'agent') {
+          fallbackText = '상담원 연결 정보를 확인하는 중 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+        } else if (answerKey === 'file') {
+          fallbackText = '파일 제출 방법 정보를 확인하는 중 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+        }
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: fallbackText,
+          isUser: false,
+          timestamp: new Date(),
+          buttons: questionCategories.main
+        };
+        setMessages(prev => [...prev, botMessage]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+    
+    if (answer && answer.text) {
       setTimeout(() => {
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),

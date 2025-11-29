@@ -266,18 +266,50 @@ async function generateBasicResponse(query: string): Promise<string> {
     return `${companyInfo}\n\n주문량에 대해 문의하시는군요! 최소 주문량은 없으며 소량 주문도 환영합니다. 다만 소량 주문의 경우 단가가 높을 수 있으니 사전 상담을 권장합니다.`;
   }
   
-  if (queryLower.includes('연락처') || queryLower.includes('전화') || queryLower.includes('연락')) {
-    // 프롬프트에서 전화번호 가져오기
+  if (queryLower.includes('연락처') || queryLower.includes('전화') || queryLower.includes('연락') || queryLower.includes('연락처 안내')) {
+    // 프롬프트에서 전화번호와 이메일 가져오기
     try {
       const { getQuotePrompt } = await import('@/lib/openai');
       const prompt = await getQuotePrompt('');
       const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
       const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
-      return `${companyInfo}\n\n연락처 정보를 원하시는군요! 정우특수코팅은 전화(${phone}), 이메일, 온라인 문의 폼을 통해 연락 가능합니다. 무료 상담 서비스를 제공하니 언제든 연락해 주세요.`;
+      const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
+      return `연락처 정보:\n\n📞 전화: ${phone}\n📧 이메일: ${email}\n📍 주소: 서울시 XX구 XX동\n⏰ 영업시간: 평일 09:00 - 18:00\n\n온라인 문의 폼: /contact\n무료 상담 서비스 제공 중입니다! 😊`;
     } catch (error) {
       console.error('프롬프트 가져오기 오류:', error);
     }
-    return `${companyInfo}\n\n연락처 정보를 원하시는군요! 정우특수코팅은 전화(02-1234-5678), 이메일, 온라인 문의 폼을 통해 연락 가능합니다. 무료 상담 서비스를 제공하니 언제든 연락해 주세요.`;
+    return `연락처 정보:\n\n📞 전화: 02-1234-5678\n📧 이메일: info@jeongwoo.co.kr\n📍 주소: 서울시 XX구 XX동\n⏰ 영업시간: 평일 09:00 - 18:00\n\n온라인 문의 폼: /contact\n무료 상담 서비스 제공 중입니다! 😊`;
+  }
+  
+  if (queryLower.includes('상담원') || queryLower.includes('상담원 연결')) {
+    // 프롬프트에서 전화번호와 이메일 가져오기
+    try {
+      const { getQuotePrompt } = await import('@/lib/openai');
+      const prompt = await getQuotePrompt('');
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
+      return `상담원 연결 안내:\n\n상담원과 직접 대화하시려면:\n📞 전화: ${phone}\n📧 이메일: ${email}\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.`;
+    } catch (error) {
+      console.error('프롬프트 가져오기 오류:', error);
+    }
+    return `상담원 연결 안내:\n\n상담원과 직접 대화하시려면:\n📞 전화: 02-1234-5678\n📧 이메일: info@jeongwoo.co.kr\n🌐 온라인 문의: /contact\n\n전화 상담은 평일 09:00-18:00 가능합니다.\n이메일 문의는 24시간 접수 가능하며, 24시간 이내 답변드립니다.`;
+  }
+  
+  if (queryLower.includes('파일') && (queryLower.includes('제출') || queryLower.includes('방법'))) {
+    // 프롬프트에서 이메일 가져오기
+    try {
+      const { getQuotePrompt } = await import('@/lib/openai');
+      const prompt = await getQuotePrompt('');
+      const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
+      const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
+      return `파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일 제출 방법:\n\n📧 이메일 제출:\n• 이메일 주소: ${email}\n• 제목에 "파일 제출" 명시\n• 파일 첨부 후 발송\n\n🌐 웹하드 업로드:\n• 웹하드 주소: https://webhard.jeongwoo.co.kr\n• 아이디/비밀번호: 문의 시 안내\n• 업로드 후 담당자에게 알림\n\n💬 온라인 문의 폼:\n• /contact 페이지에서 파일 첨부 가능\n• 문의 내용과 함께 파일 제출\n\n파일 크기가 큰 경우 웹하드나 이메일을 이용해주세요.`;
+    } catch (error) {
+      console.error('프롬프트 가져오기 오류:', error);
+    }
+    return `파일 제출 방법 안내:\n\n📄 파일 형식: PDF, AI, EPS\n📐 해상도: 300DPI 이상\n🎨 컬러 모드: CMYK\n📍 코팅 영역: 별도 레이어로 표시\n\n파일 제출 방법:\n\n📧 이메일 제출:\n• 이메일 주소: info@jeongwoo.co.kr\n• 제목에 "파일 제출" 명시\n• 파일 첨부 후 발송\n\n🌐 웹하드 업로드:\n• 웹하드 주소: https://webhard.jeongwoo.co.kr\n• 아이디/비밀번호: 문의 시 안내\n• 업로드 후 담당자에게 알림\n\n💬 온라인 문의 폼:\n• /contact 페이지에서 파일 첨부 가능\n• 문의 내용과 함께 파일 제출\n\n파일 크기가 큰 경우 웹하드나 이메일을 이용해주세요.`;
   }
   
   if (queryLower.includes('서비스') || queryLower.includes('코팅') || queryLower.includes('작업')) {
