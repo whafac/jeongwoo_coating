@@ -132,10 +132,11 @@ const DEFAULT_QUOTE_PROMPT = `당신은 정우특수코팅의 코팅 전문 상�
 
 **중요:** 정확한 견적은 파일과 상세 정보 확인 후 가능하므로, 최종 견적은 담당자와 직접 상담을 권장합니다. 모든 질문에 대해 친절하고 전문적으로 답변하며, 고객의 요구사항을 정확히 파악하여 최적의 솔루션을 제안하세요.`;
 
-// 견적 관련 프롬프트 생성 함수 (데이터베이스에서 가져오거나 기본값 사용)
+// 견적 관련 프롬프트 생성 함수 (데이터베이스에서만 가져오기)
+// 모든 프롬프트는 DB에서 관리되므로 기본 프롬프트는 사용하지 않습니다.
 export async function getQuotePrompt(context: string = ''): Promise<string> {
   try {
-    // 데이터베이스에서 프롬프트 가져오기 시도
+    // 데이터베이스에서 프롬프트 가져오기
     const { supabase } = await import('@/lib/database');
     // id 컬럼 사용 (company_code가 아닌 id로 조회)
     const { data: company, error: companyError } = await supabase
@@ -157,26 +158,28 @@ export async function getQuotePrompt(context: string = ''): Promise<string> {
         console.log('✅ 데이터베이스에서 프롬프트를 성공적으로 가져왔습니다.');
         return context ? `${prompt}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : prompt;
       } else {
-        console.log('⚠️ chatbot_settings에서 프롬프트를 찾을 수 없습니다. 기본 프롬프트 사용:', settingsError?.message);
+        console.error('❌ DB에 프롬프트가 저장되어 있지 않습니다. 관리자 페이지에서 프롬프트를 저장해주세요.');
+        throw new Error('DB에 프롬프트가 저장되어 있지 않습니다. 관리자 페이지에서 프롬프트를 저장해주세요.');
       }
     } else {
-      console.log('⚠️ 회사를 찾을 수 없습니다. 기본 프롬프트 사용:', companyError?.message);
+      console.error('❌ 회사를 찾을 수 없습니다:', companyError?.message);
+      throw new Error('회사를 찾을 수 없습니다.');
     }
   } catch (error) {
     console.error('프롬프트 가져오기 오류:', error);
+    throw error;
   }
-
-  // 데이터베이스에서 가져오지 못한 경우 기본 프롬프트 사용
-  console.log('ℹ️ 기본 프롬프트를 사용합니다.');
-  return context ? `${DEFAULT_QUOTE_PROMPT}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : DEFAULT_QUOTE_PROMPT;
 }
 
-// 동기 버전 (기본 프롬프트만 반환, 호환성을 위해 유지)
+// 동기 버전 (사용하지 않음, DB에서만 가져옴)
+// 호환성을 위해 유지하지만 실제로는 사용하지 않습니다.
 export function getQuotePromptSync(context: string = ''): string {
-  return context ? `${DEFAULT_QUOTE_PROMPT}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : DEFAULT_QUOTE_PROMPT;
+  console.warn('⚠️ getQuotePromptSync는 더 이상 사용되지 않습니다. getQuotePrompt를 사용하세요.');
+  return '프롬프트는 DB에서 관리됩니다. 관리자 페이지에서 프롬프트를 확인하세요.';
 }
 
-// 기본 프롬프트 내보내기 (관리 페이지에서 사용)
+// 기본 프롬프트 내보내기 (관리 페이지에서 참고용으로만 사용)
+// 실제 챗봇 답변에는 사용되지 않으며, 관리자 페이지에서 통합할 때만 참고합니다.
 export { DEFAULT_QUOTE_PROMPT };
 
 // 견적 관련 기본 답변 생성 함수 (API 키 없을 때 사용)

@@ -49,58 +49,9 @@ const questionCategories = {
   ],
 };
 
-const answers: Record<string, { text: string; nextButtons?: string }> = {
-  service: {
-    text: '정우특수코팅의 주요 서비스를 안내해드리겠습니다. 어떤 서비스에 대해 알고 싶으신가요?',
-    nextButtons: 'service'
-  },
-  quote: {
-    text: '견적 문의를 도와드리겠습니다! 어떤 코팅 서비스의 견적이 궁금하신가요? 아래 버튼을 선택하시거나 자유롭게 질문해주세요. 📋',
-    nextButtons: 'quote'
-  },
-  'quote-uv': {
-    text: 'UV 코팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
-  },
-  'quote-laminating': {
-    text: '라미네이팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 유광/무광 선택\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
-  },
-  'quote-foil': {
-    text: '박 코팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 박 종류 (금박/은박/홀로그램)\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
-  },
-  'quote-embossing': {
-    text: '형압 가공 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 형압 종류 (양각/음각)\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬'
-  },
-  'quote-custom': {
-    text: '코팅 견적에 대해 자유롭게 질문해주세요! 인쇄물 종류, 수량, 납기일 등 필요한 정보를 알려주시면 정확한 견적을 도와드리겠습니다. 💬'
-  },
-  process: {
-    text: '작업 프로세스는 4단계로 진행됩니다:\n\n1️⃣ 상담 - 요구사항 확인\n2️⃣ 견적 - 비용 산정\n3️⃣ 작업 - 코팅 진행\n4️⃣ 납품 - 완제품 전달\n\n일반적으로 2-3일 소요되며, 급한 경우 당일 작업도 가능합니다.'
-  },
-  file: {
-    text: '', // 동적으로 생성됨
-  },
-  delivery: {
-    text: '작업 소요시간 안내:\n\n⏱️ 일반 작업: 2-3일\n⚡ 긴급 작업: 당일 가능 (추가 비용 발생)\n📦 택배 발송: 1일 추가\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.'
-  },
-  contact: {
-    text: '', // 동적으로 생성됨
-  },
-  agent: {
-    text: '', // 동적으로 생성됨
-  },
-  uv: {
-    text: '✨ UV 코팅 서비스 안내:\n\n자외선(UV)으로 경화시키는 코팅 방식으로:\n• 빠른 건조 시간\n• 뛰어난 광택감\n• 우수한 내구성\n• 명함, 카탈로그, 포스터 등에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
-  },
-  laminating: {
-    text: '📄 라미네이팅 서비스 안내:\n\n필름을 인쇄물 표면에 부착하여 보호:\n• 유광/무광 라미네이팅\n• 방수 및 오염 방지\n• 책 표지, 메뉴판, 카드 등에 최적\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
-  },
-  foil: {
-    text: '🌟 박 코팅 서비스 안내:\n\n금속 박막을 인쇄물에 전사:\n• 금박, 은박, 홀로그램 박\n• 화려하고 고급스러운 효과\n• 명함, 초대장, 패키지 등에 활용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
-  },
-  embossing: {
-    text: '🎨 형압 가공 서비스 안내:\n\n압력을 가하여 입체적 효과:\n• 양각 (돌출)\n• 음각 (들어감)\n• 독특한 촉감과 시각적 효과\n• 명함, 초대장, 고급 인쇄물에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.'
-  },
-};
+// 하드코딩된 answers 객체 제거
+// 모든 답변은 DB 프롬프트를 기반으로 API를 통해 생성됩니다.
+// 이전 answers 객체의 내용은 관리자 페이지의 DB 프롬프트에 통합되어 관리됩니다.
 
 // 세션 토큰 관리 함수
 const getSessionToken = (): string => {
@@ -276,22 +227,8 @@ export default function Chatbot() {
     // 카테고리 버튼 클릭 시 다음 단계 버튼 표시
     const answerKey = category || buttonId;
     
-    // 먼저 카테고리별 다음 단계 버튼이 있는지 확인
-    if (answerKey && questionCategories[answerKey as keyof typeof questionCategories]) {
-      const answer = answers[answerKey];
-      setTimeout(() => {
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: answer ? answer.text : `${buttonLabel}에 대한 정보입니다.`,
-          isUser: false,
-          timestamp: new Date(),
-          buttons: questionCategories[answerKey as keyof typeof questionCategories]
-        };
-        setMessages(prev => [...prev, botMessage]);
-        setIsLoading(false);
-      }, 500);
-      return;
-    }
+    // 모든 답변을 DB 프롬프트 기반으로 생성하므로 하드코딩된 answers 객체는 사용하지 않음
+    // 카테고리별 다음 단계 버튼이 있는 경우에도 API를 통해 답변 생성
 
     // 모든 답변을 API를 통해 DB 프롬프트 기반으로 생성
     // 하드코딩된 answers 객체 대신 API 호출

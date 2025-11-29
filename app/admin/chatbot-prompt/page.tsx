@@ -257,56 +257,62 @@ export default function ChatbotPromptPage() {
     }
   };
 
-  const handleCompareWithDefault = async () => {
+  const handleMergeAllPrompts = async () => {
     try {
       const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
-      const currentLength = promptData.quotePrompt.length;
-      const defaultLength = DEFAULT_QUOTE_PROMPT.length;
       
-      const comparison = {
-        현재프롬프트길이: currentLength,
-        기본프롬프트길이: defaultLength,
-        차이: defaultLength - currentLength,
-        비율: ((currentLength / defaultLength) * 100).toFixed(1) + '%'
-      };
-      
-      console.log('📊 프롬프트 비교 결과:', comparison);
-      
-      if (currentLength < defaultLength * 0.8) {
-        const shouldMerge = confirm(
-          `현재 프롬프트(${currentLength}자)가 기본 프롬프트(${defaultLength}자)보다 ${Math.round((1 - currentLength / defaultLength) * 100)}% 짧습니다.\n\n` +
-          `기본 프롬프트의 누락된 내용을 현재 프롬프트에 추가하시겠습니까?\n\n` +
-          `(현재 프롬프트는 유지되고, 기본 프롬프트의 추가 내용만 병합됩니다)`
-        );
-        
-        if (shouldMerge) {
-          // 기본 프롬프트의 내용을 현재 프롬프트에 병합
-          // 현재 프롬프트가 기본 프롬프트의 일부인지 확인
-          if (DEFAULT_QUOTE_PROMPT.includes(promptData.quotePrompt.substring(0, 100))) {
-            // 현재 프롬프트가 기본 프롬프트의 일부라면, 기본 프롬프트로 교체
-            setPromptData({
-              quotePrompt: DEFAULT_QUOTE_PROMPT,
-              lastUpdated: promptData.lastUpdated,
-              isDefault: false
-            });
-            setMessage('✅ 기본 프롬프트로 업데이트했습니다. 저장하기를 클릭하여 DB에 저장하세요.');
-          } else {
-            // 현재 프롬프트와 기본 프롬프트를 병합
-            const merged = `${promptData.quotePrompt}\n\n${DEFAULT_QUOTE_PROMPT}`;
-            setPromptData({
-              quotePrompt: merged,
-              lastUpdated: promptData.lastUpdated,
-              isDefault: false
-            });
-            setMessage('✅ 기본 프롬프트 내용을 현재 프롬프트에 추가했습니다. 저장하기를 클릭하여 DB에 저장하세요.');
+      // 예상질문 버튼 답변들을 프롬프트 형식으로 변환
+      const buttonAnswersText = Object.entries(buttonAnswers)
+        .map(([key, value]) => {
+          if (value && value !== '(DB 프롬프트에서 "상담원 연결" 섹션을 찾아 사용하거나, 기본 답변 사용)' &&
+              value !== '(DB 프롬프트에서 "파일 제출 방법" 섹션을 찾아 사용하거나, 기본 답변 사용)' &&
+              value !== '(DB 프롬프트에서 "연락처 안내" 섹션을 찾아 사용하거나, 기본 답변 사용)') {
+            return `**${key}:**\n${value}`;
           }
-        }
-      } else {
-        alert(`현재 프롬프트(${currentLength}자)는 기본 프롬프트(${defaultLength}자)의 ${comparison.비율}입니다.\n\n차이가 크지 않으므로 추가 작업이 필요하지 않습니다.`);
+          return null;
+        })
+        .filter(Boolean)
+        .join('\n\n');
+      
+      // 모든 프롬프트 통합
+      const mergedPrompt = `${promptData.quotePrompt}
+
+---
+
+## 📚 **추가 프롬프트 내용 (기본 프롬프트에서 통합)**
+
+${DEFAULT_QUOTE_PROMPT}
+
+---
+
+## 🎯 **예상질문 버튼 답변**
+
+${buttonAnswersText}
+
+---
+
+**중요:** 위의 모든 내용은 챗봇이 답변을 생성할 때 참고하는 통합 프롬프트입니다. 관리자 페이지에서 이 프롬프트를 수정하면 모든 챗봇 답변이 업데이트됩니다.`;
+      
+      const shouldMerge = confirm(
+        `모든 프롬프트를 통합하시겠습니까?\n\n` +
+        `- 현재 DB 프롬프트: ${promptData.quotePrompt.length}자\n` +
+        `- 기본 프롬프트: ${DEFAULT_QUOTE_PROMPT.length}자\n` +
+        `- 예상질문 답변: ${Object.keys(buttonAnswers).length}개\n\n` +
+        `통합 후 모든 챗봇 답변이 이 프롬프트를 기반으로 생성됩니다.\n\n` +
+        `기존 하드코딩된 프롬프트는 제거되고 DB 프롬프트만 사용됩니다.`
+      );
+      
+      if (shouldMerge) {
+        setPromptData({
+          quotePrompt: mergedPrompt,
+          lastUpdated: promptData.lastUpdated,
+          isDefault: false
+        });
+        setMessage('✅ 모든 프롬프트를 통합했습니다. 저장하기를 클릭하여 DB에 저장하세요. 저장 후 코드에서 하드코딩된 프롬프트가 제거됩니다.');
       }
     } catch (error) {
-      console.error('프롬프트 비교 오류:', error);
-      setMessage('❌ 프롬프트 비교 중 오류가 발생했습니다.');
+      console.error('프롬프트 통합 오류:', error);
+      setMessage('❌ 프롬프트 통합 중 오류가 발생했습니다.');
     }
   };
 
@@ -408,12 +414,12 @@ export default function ChatbotPromptPage() {
               </div>
               <div className={styles.editorActions}>
                 <button 
-                  onClick={handleCompareWithDefault}
+                  onClick={handleMergeAllPrompts}
                   className={styles.resetButton}
                   disabled={saving}
-                  style={{ background: '#ff9800', color: 'white', border: 'none' }}
+                  style={{ background: '#4caf50', color: 'white', border: 'none' }}
                 >
-                  기본값과 비교
+                  모든 프롬프트 통합
                 </button>
                 <button 
                   onClick={handleReset}
