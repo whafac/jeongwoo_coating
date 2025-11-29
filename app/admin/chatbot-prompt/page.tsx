@@ -7,6 +7,7 @@ import styles from './prompt.module.css';
 interface PromptData {
   quotePrompt: string;
   lastUpdated?: string;
+  isDefault?: boolean;
 }
 
 export default function ChatbotPromptPage() {
@@ -67,8 +68,16 @@ export default function ChatbotPromptPage() {
           });
           setPromptData({
             quotePrompt: data.quotePrompt,
-            lastUpdated: data.lastUpdated
+            lastUpdated: data.lastUpdated,
+            isDefault: data.isDefault || false
           });
+          
+          // 프롬프트가 기본값인지 확인
+          if (data.isDefault) {
+            console.warn('⚠️ 기본 프롬프트를 사용 중입니다. DB에 저장된 프롬프트가 없거나 조회에 실패했습니다.');
+          } else {
+            console.log('✅ DB에서 저장된 프롬프트를 성공적으로 로드했습니다.');
+          }
         } else {
           console.warn('⚠️ 프롬프트가 비어있습니다. 기본 프롬프트를 로드합니다.');
           await loadDefaultPrompt();
@@ -261,7 +270,16 @@ export default function ChatbotPromptPage() {
                 <li>AI가 견적 문의에 답변할 때 사용하는 지침입니다</li>
                 <li>견적 단가, 할인율, 안내 지침 등을 포함하세요</li>
                 <li>변경 후 저장하면 즉시 챗봇에 반영됩니다</li>
+                <li>프롬프트는 DB에 저장되며, 모든 챗봇 답변의 기준이 됩니다</li>
               </ul>
+              {process.env.NODE_ENV === 'development' && (
+                <div style={{ marginTop: '1rem', padding: '0.5rem', background: '#f0f0f0', borderRadius: '4px', fontSize: '12px' }}>
+                  <strong>디버그 정보:</strong>
+                  <br />프롬프트 길이: {promptData.quotePrompt.length}자
+                  <br />마지막 수정: {promptData.lastUpdated ? new Date(promptData.lastUpdated).toLocaleString('ko-KR') : '없음'}
+                  <br />브라우저 콘솔에서 상세 로그를 확인하세요.
+                </div>
+              )}
             </div>
 
             <textarea
@@ -282,12 +300,24 @@ export default function ChatbotPromptPage() {
 
             <div className={styles.editorFooter}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <p>문자 수: {promptData.quotePrompt.length}자</p>
-                {promptData.lastUpdated && (
-                  <p>마지막 수정: {new Date(promptData.lastUpdated).toLocaleString('ko-KR')}</p>
-                )}
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <p><strong>문자 수:</strong> {promptData.quotePrompt.length}자</p>
+                  {promptData.lastUpdated && (
+                    <p><strong>마지막 수정:</strong> {new Date(promptData.lastUpdated).toLocaleString('ko-KR')}</p>
+                  )}
+                  {promptData.isDefault !== undefined && (
+                    <p style={{ color: promptData.isDefault ? '#ff9800' : '#4caf50' }}>
+                      <strong>상태:</strong> {promptData.isDefault ? '⚠️ 기본 프롬프트 사용 중' : '✅ DB 프롬프트 사용 중'}
+                    </p>
+                  )}
+                </div>
                 {promptData.quotePrompt.length === 0 && (
                   <p style={{ color: '#f44336' }}>⚠️ 프롬프트가 비어있습니다. 기본 프롬프트를 로드하거나 새로 입력해주세요.</p>
+                )}
+                {promptData.isDefault && promptData.quotePrompt.length > 0 && (
+                  <p style={{ color: '#ff9800', background: '#fff3e0', padding: '0.5rem', borderRadius: '4px' }}>
+                    ⚠️ 현재 기본 프롬프트를 표시하고 있습니다. 저장하면 DB에 저장되며, 다음부터는 DB 프롬프트가 로드됩니다.
+                  </p>
                 )}
               </div>
             </div>
