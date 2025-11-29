@@ -68,19 +68,27 @@ export async function GET(request: NextRequest) {
 
     // settings가 없거나 에러가 발생한 경우
     if (fetchError || !settings) {
-      // 에러가 발생했지만 데이터가 없는 경우 (PGRST116)는 기본 프롬프트 반환
+      // DB에 프롬프트가 없으면 빈 프롬프트 반환 (관리자가 직접 입력해야 함)
       if (fetchError && fetchError.code === 'PGRST116') {
-        console.log('⚠️ DB에 프롬프트가 저장되어 있지 않습니다. 기본 프롬프트를 반환합니다.');
+        console.log('⚠️ DB에 프롬프트가 저장되어 있지 않습니다. 관리자 페이지에서 프롬프트를 입력해주세요.');
+        return NextResponse.json({
+          quotePrompt: '',
+          lastUpdated: null,
+          isDefault: false
+        });
       } else if (fetchError) {
         console.error('⚠️ 프롬프트 조회 중 오류 발생:', fetchError);
+        return NextResponse.json(
+          { error: '프롬프트를 불러올 수 없습니다.', details: fetchError.message },
+          { status: 500 }
+        );
       }
       
-      // 기본 프롬프트 반환
-      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
+      // settings가 null인 경우
       return NextResponse.json({
-        quotePrompt: DEFAULT_QUOTE_PROMPT,
+        quotePrompt: '',
         lastUpdated: null,
-        isDefault: true // 기본값인지 표시
+        isDefault: false
       });
     }
 

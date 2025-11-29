@@ -10,7 +10,6 @@ interface PromptData {
   isDefault?: boolean;
 }
 
-type ViewMode = 'current' | 'default' | 'all';
 
 export default function ChatbotPromptPage() {
   const router = useRouter();
@@ -20,9 +19,6 @@ export default function ChatbotPromptPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('current');
-  const [defaultPrompt, setDefaultPrompt] = useState<string>('');
-  const [buttonAnswers, setButtonAnswers] = useState<Record<string, string>>({});
 
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
@@ -42,44 +38,7 @@ export default function ChatbotPromptPage() {
 
   useEffect(() => {
     fetchPrompt();
-    loadDefaultPromptForView();
-    loadButtonAnswers();
   }, []);
-
-  const loadDefaultPromptForView = async () => {
-    try {
-      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
-      setDefaultPrompt(DEFAULT_QUOTE_PROMPT);
-    } catch (error) {
-      console.error('기본 프롬프트 로드 오류:', error);
-    }
-  };
-
-  const loadButtonAnswers = async () => {
-    try {
-      // Chatbot.tsx의 answers 객체를 동적으로 가져오기
-      const answers = {
-        '서비스 안내': '정우특수코팅의 주요 서비스를 안내해드리겠습니다. 어떤 서비스에 대해 알고 싶으신가요?',
-        '견적 문의': '견적 문의를 도와드리겠습니다! 어떤 코팅 서비스의 견적이 궁금하신가요? 아래 버튼을 선택하시거나 자유롭게 질문해주세요. 📋',
-        'UV 코팅 견적': 'UV 코팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬',
-        '라미네이팅 견적': '라미네이팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 유광/무광 선택\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬',
-        '박 코팅 견적': '박 코팅 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 박 종류 (금박/은박/홀로그램)\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬',
-        '형압 가공 견적': '형압 가공 견적 문의입니다. 아래 정보를 알려주시면 더 정확한 견적을 제공해드릴 수 있습니다:\n\n• 인쇄물 종류 및 크기\n• 형압 종류 (양각/음각)\n• 수량\n• 납기일\n\n자유롭게 질문해주세요! 💬',
-        '작업 프로세스': '작업 프로세스는 4단계로 진행됩니다:\n\n1️⃣ 상담 - 요구사항 확인\n2️⃣ 견적 - 비용 산정\n3️⃣ 작업 - 코팅 진행\n4️⃣ 납품 - 완제품 전달\n\n일반적으로 2-3일 소요되며, 급한 경우 당일 작업도 가능합니다.',
-        '납기일 문의': '작업 소요시간 안내:\n\n⏱️ 일반 작업: 2-3일\n⚡ 긴급 작업: 당일 가능 (추가 비용 발생)\n📦 택배 발송: 1일 추가\n\n정확한 납기일은 작업량과 난이도에 따라 달라질 수 있으니, 상세한 문의 부탁드립니다.',
-        'UV 코팅 서비스': '✨ UV 코팅 서비스 안내:\n\n자외선(UV)으로 경화시키는 코팅 방식으로:\n• 빠른 건조 시간\n• 뛰어난 광택감\n• 우수한 내구성\n• 명함, 카탈로그, 포스터 등에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.',
-        '라미네이팅 서비스': '📄 라미네이팅 서비스 안내:\n\n필름을 인쇄물 표면에 부착하여 보호:\n• 유광/무광 라미네이팅\n• 방수 및 오염 방지\n• 책 표지, 메뉴판, 카드 등에 최적\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.',
-        '박 코팅 서비스': '🌟 박 코팅 서비스 안내:\n\n금속 박막을 인쇄물에 전사:\n• 금박, 은박, 홀로그램 박\n• 화려하고 고급스러운 효과\n• 명함, 초대장, 패키지 등에 활용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.',
-        '형압 가공 서비스': '🎨 형압 가공 서비스 안내:\n\n압력을 가하여 입체적 효과:\n• 양각 (돌출)\n• 음각 (들어감)\n• 독특한 촉감과 시각적 효과\n• 명함, 초대장, 고급 인쇄물에 적용\n\n더 자세한 정보는 /services 페이지에서 확인하실 수 있습니다.',
-        '상담원 연결': '(DB 프롬프트에서 "상담원 연결" 섹션을 찾아 사용하거나, 기본 답변 사용)',
-        '파일 제출 방법': '(DB 프롬프트에서 "파일 제출 방법" 섹션을 찾아 사용하거나, 기본 답변 사용)',
-        '연락처 안내': '(DB 프롬프트에서 "연락처 안내" 섹션을 찾아 사용하거나, 기본 답변 사용)'
-      };
-      setButtonAnswers(answers);
-    } catch (error) {
-      console.error('버튼 답변 로드 오류:', error);
-    }
-  };
 
   // textarea 높이 자동 조정
   useEffect(() => {
@@ -257,64 +216,6 @@ export default function ChatbotPromptPage() {
     }
   };
 
-  const handleMergeAllPrompts = async () => {
-    try {
-      const { DEFAULT_QUOTE_PROMPT } = await import('@/lib/openai');
-      
-      // 예상질문 버튼 답변들을 프롬프트 형식으로 변환
-      const buttonAnswersText = Object.entries(buttonAnswers)
-        .map(([key, value]) => {
-          if (value && value !== '(DB 프롬프트에서 "상담원 연결" 섹션을 찾아 사용하거나, 기본 답변 사용)' &&
-              value !== '(DB 프롬프트에서 "파일 제출 방법" 섹션을 찾아 사용하거나, 기본 답변 사용)' &&
-              value !== '(DB 프롬프트에서 "연락처 안내" 섹션을 찾아 사용하거나, 기본 답변 사용)') {
-            return `**${key}:**\n${value}`;
-          }
-          return null;
-        })
-        .filter(Boolean)
-        .join('\n\n');
-      
-      // 모든 프롬프트 통합
-      const mergedPrompt = `${promptData.quotePrompt}
-
----
-
-## 📚 **추가 프롬프트 내용 (기본 프롬프트에서 통합)**
-
-${DEFAULT_QUOTE_PROMPT}
-
----
-
-## 🎯 **예상질문 버튼 답변**
-
-${buttonAnswersText}
-
----
-
-**중요:** 위의 모든 내용은 챗봇이 답변을 생성할 때 참고하는 통합 프롬프트입니다. 관리자 페이지에서 이 프롬프트를 수정하면 모든 챗봇 답변이 업데이트됩니다.`;
-      
-      const shouldMerge = confirm(
-        `모든 프롬프트를 통합하시겠습니까?\n\n` +
-        `- 현재 DB 프롬프트: ${promptData.quotePrompt.length}자\n` +
-        `- 기본 프롬프트: ${DEFAULT_QUOTE_PROMPT.length}자\n` +
-        `- 예상질문 답변: ${Object.keys(buttonAnswers).length}개\n\n` +
-        `통합 후 모든 챗봇 답변이 이 프롬프트를 기반으로 생성됩니다.\n\n` +
-        `기존 하드코딩된 프롬프트는 제거되고 DB 프롬프트만 사용됩니다.`
-      );
-      
-      if (shouldMerge) {
-        setPromptData({
-          quotePrompt: mergedPrompt,
-          lastUpdated: promptData.lastUpdated,
-          isDefault: false
-        });
-        setMessage('✅ 모든 프롬프트를 통합했습니다. 저장하기를 클릭하여 DB에 저장하세요. 저장 후 코드에서 하드코딩된 프롬프트가 제거됩니다.');
-      }
-    } catch (error) {
-      console.error('프롬프트 통합 오류:', error);
-      setMessage('❌ 프롬프트 통합 중 오류가 발생했습니다.');
-    }
-  };
 
   if (loading) {
     return (
@@ -368,59 +269,7 @@ ${buttonAnswersText}
           <div className={styles.editorContainer}>
             <div className={styles.editorHeader}>
               <h2>챗봇 프롬프트 관리</h2>
-              <div className={styles.viewModeTabs} style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e0e0e0' }}>
-                <button
-                  onClick={() => setViewMode('current')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: 'none',
-                    background: viewMode === 'current' ? '#2c5f8d' : 'transparent',
-                    color: viewMode === 'current' ? 'white' : '#666',
-                    cursor: 'pointer',
-                    borderBottom: viewMode === 'current' ? '2px solid #2c5f8d' : '2px solid transparent',
-                    marginBottom: '-2px'
-                  }}
-                >
-                  현재 DB 프롬프트
-                </button>
-                <button
-                  onClick={() => setViewMode('default')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: 'none',
-                    background: viewMode === 'default' ? '#2c5f8d' : 'transparent',
-                    color: viewMode === 'default' ? 'white' : '#666',
-                    cursor: 'pointer',
-                    borderBottom: viewMode === 'default' ? '2px solid #2c5f8d' : '2px solid transparent',
-                    marginBottom: '-2px'
-                  }}
-                >
-                  기본 프롬프트 (참고)
-                </button>
-                <button
-                  onClick={() => setViewMode('all')}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    border: 'none',
-                    background: viewMode === 'all' ? '#2c5f8d' : 'transparent',
-                    color: viewMode === 'all' ? 'white' : '#666',
-                    cursor: 'pointer',
-                    borderBottom: viewMode === 'all' ? '2px solid #2c5f8d' : '2px solid transparent',
-                    marginBottom: '-2px'
-                  }}
-                >
-                  전체 프롬프트 보기
-                </button>
-              </div>
               <div className={styles.editorActions}>
-                <button 
-                  onClick={handleMergeAllPrompts}
-                  className={styles.resetButton}
-                  disabled={saving}
-                  style={{ background: '#4caf50', color: 'white', border: 'none' }}
-                >
-                  모든 프롬프트 통합
-                </button>
                 <button 
                   onClick={handleReset}
                   className={styles.resetButton}
@@ -428,15 +277,13 @@ ${buttonAnswersText}
                 >
                   기본값으로 초기화
                 </button>
-                {viewMode === 'current' && (
-                  <button 
-                    onClick={handleSave}
-                    className={styles.saveButton}
-                    disabled={saving}
-                  >
-                    {saving ? '저장 중...' : '저장하기'}
-                  </button>
-                )}
+                <button 
+                  onClick={handleSave}
+                  className={styles.saveButton}
+                  disabled={saving}
+                >
+                  {saving ? '저장 중...' : '저장하기'}
+                </button>
               </div>
             </div>
 
@@ -459,111 +306,21 @@ ${buttonAnswersText}
               </div>
             </div>
 
-            {viewMode === 'current' && (
-              <textarea
-                value={promptData.quotePrompt}
-                onChange={(e) => setPromptData(prev => ({ ...prev, quotePrompt: e.target.value }))}
-                className={styles.promptTextarea}
-                placeholder="견적 프롬프트를 입력하세요..."
-                style={{ 
-                  height: 'auto',
-                  minHeight: '800px'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${Math.max(800, target.scrollHeight + 50)}px`;
-                }}
-              />
-            )}
-            
-            {viewMode === 'default' && (
-              <textarea
-                value={defaultPrompt}
-                readOnly
-                className={styles.promptTextarea}
-                style={{ 
-                  height: 'auto',
-                  minHeight: '800px',
-                  background: '#f5f5f5',
-                  cursor: 'not-allowed'
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${Math.max(800, target.scrollHeight + 50)}px`;
-                }}
-              />
-            )}
-            
-            {viewMode === 'all' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                <div>
-                  <h3 style={{ marginBottom: '1rem', color: '#2c5f8d' }}>1. 현재 DB 프롬프트 ({promptData.quotePrompt.length}자)</h3>
-                  <textarea
-                    value={promptData.quotePrompt}
-                    onChange={(e) => setPromptData(prev => ({ ...prev, quotePrompt: e.target.value }))}
-                    className={styles.promptTextarea}
-                    style={{ 
-                      height: 'auto',
-                      minHeight: '400px',
-                      maxHeight: '600px'
-                    }}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = `${Math.max(400, Math.min(600, target.scrollHeight + 50))}px`;
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <h3 style={{ marginBottom: '1rem', color: '#2c5f8d' }}>2. 기본 프롬프트 (참고용, {defaultPrompt.length}자)</h3>
-                  <textarea
-                    value={defaultPrompt}
-                    readOnly
-                    className={styles.promptTextarea}
-                    style={{ 
-                      height: 'auto',
-                      minHeight: '400px',
-                      maxHeight: '600px',
-                      background: '#f5f5f5',
-                      cursor: 'not-allowed'
-                    }}
-                    onInput={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      target.style.height = 'auto';
-                      target.style.height = `${Math.max(400, Math.min(600, target.scrollHeight + 50))}px`;
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <h3 style={{ marginBottom: '1rem', color: '#2c5f8d' }}>3. 예상질문 버튼 답변 (참고용)</h3>
-                  <div style={{ 
-                    background: '#f5f5f5', 
-                    padding: '1.5rem', 
-                    borderRadius: '8px',
-                    maxHeight: '600px',
-                    overflowY: 'auto'
-                  }}>
-                    {Object.entries(buttonAnswers).map(([key, value]) => (
-                      <div key={key} style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #ddd' }}>
-                        <h4 style={{ color: '#2c5f8d', marginBottom: '0.5rem' }}>{key}</h4>
-                        <pre style={{ 
-                          whiteSpace: 'pre-wrap', 
-                          wordWrap: 'break-word',
-                          fontFamily: 'inherit',
-                          fontSize: '14px',
-                          lineHeight: '1.6',
-                          margin: 0
-                        }}>{value}</pre>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            <textarea
+              value={promptData.quotePrompt}
+              onChange={(e) => setPromptData(prev => ({ ...prev, quotePrompt: e.target.value }))}
+              className={styles.promptTextarea}
+              placeholder="챗봇 프롬프트를 입력하세요..."
+              style={{ 
+                height: 'auto',
+                minHeight: '800px'
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${Math.max(800, target.scrollHeight + 50)}px`;
+              }}
+            />
 
             <div className={styles.editorFooter}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
