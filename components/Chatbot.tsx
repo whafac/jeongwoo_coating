@@ -293,79 +293,63 @@ export default function Chatbot() {
       return;
     }
 
-    // 즉시 답변이 있는 경우
-    const answer = answers[answerKey];
-    
-    // contact, agent, file은 프롬프트에서 정보를 가져와야 하므로 API 호출
-    if (answerKey === 'contact' || answerKey === 'agent' || answerKey === 'file') {
-      // API를 통해 프롬프트 기반 답변 생성
-      try {
-        const response = await fetch('/api/chatbot/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: buttonLabel,
-            sessionToken: sessionToken,
-            isQuoteInquiry: false
-          }),
-        });
+    // 모든 답변을 API를 통해 DB 프롬프트 기반으로 생성
+    // 하드코딩된 answers 객체 대신 API 호출
+    try {
+      // 견적 관련 질문인지 확인
+      const isQuote = buttonId.startsWith('quote-') || category?.startsWith('quote') || answerKey === 'quote';
+      
+      const response = await fetch('/api/chatbot/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: buttonLabel,
+          sessionToken: sessionToken,
+          isQuoteInquiry: isQuote
+        }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok) {
-          const botMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            text: data.message,
-            isUser: false,
-            timestamp: new Date(),
-            aiGenerated: data.aiUsed || false,
-            buttons: questionCategories.main
-          };
-          setMessages(prev => [...prev, botMessage]);
-        } else {
-          throw new Error(data.error || '응답을 받을 수 없습니다.');
+      if (response.ok) {
+        // 답변에 따라 다음 버튼 결정
+        let nextButtons = questionCategories.main;
+        if (isQuote) {
+          nextButtons = questionCategories.quote;
+        } else if (answerKey === 'service') {
+          nextButtons = questionCategories.service;
+        } else if (answerKey && questionCategories[answerKey as keyof typeof questionCategories]) {
+          nextButtons = questionCategories[answerKey as keyof typeof questionCategories];
         }
-      } catch (error) {
-        console.error('챗봇 API 오류:', error);
-        // 폴백 답변
-        let fallbackText = '';
-        if (answerKey === 'contact') {
-          fallbackText = '연락처 정보를 확인하는 중 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
-        } else if (answerKey === 'agent') {
-          fallbackText = '상담원 연결 정보를 확인하는 중 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
-        } else if (answerKey === 'file') {
-          fallbackText = '파일 제출 방법 정보를 확인하는 중 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
-        }
+        
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: fallbackText,
+          text: data.message,
           isUser: false,
           timestamp: new Date(),
-          buttons: questionCategories.main
+          aiGenerated: data.aiUsed || false,
+          buttons: nextButtons
         };
         setMessages(prev => [...prev, botMessage]);
-      } finally {
-        setIsLoading(false);
+      } else {
+        throw new Error(data.error || '응답을 받을 수 없습니다.');
       }
-      return;
+    } catch (error) {
+      console.error('챗봇 API 오류:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: '죄송합니다. 일시적인 오류가 발생했습니다. 상담원에게 직접 문의해 주세요.',
+        isUser: false,
+        timestamp: new Date(),
+        buttons: [{ id: 'agent', label: '상담원 연결', action: 'agent' }]
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (answer && answer.text) {
-      setTimeout(() => {
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: answer.text,
-          isUser: false,
-          timestamp: new Date(),
-          buttons: answer.nextButtons ? questionCategories[answer.nextButtons as keyof typeof questionCategories] : questionCategories.main
-        };
-        setMessages(prev => [...prev, botMessage]);
-        setIsLoading(false);
-      }, 500);
-      return;
-    }
+    return;
 
     // AI 응답이 필요한 경우
     try {

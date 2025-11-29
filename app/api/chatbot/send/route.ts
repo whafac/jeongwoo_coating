@@ -254,16 +254,31 @@ async function generateBasicResponse(query: string): Promise<string> {
     return `${companyInfo}\n\n견적 문의를 원하시는군요! 정확한 견적을 위해 전화(02-1234-5678) 또는 온라인 문의 폼을 통해 연락해 주세요. 인쇄 파일과 수량, 납기일을 알려주시면 빠른 견적을 제공해 드립니다.`;
   }
   
-  if (queryLower.includes('시간') || queryLower.includes('소요') || queryLower.includes('납기')) {
-    return `${companyInfo}\n\n작업 소요시간에 대해 문의하시는군요! 일반적인 코팅 작업은 1-3일 소요되며, 작업량과 난이도에 따라 달라집니다. 긴급 작업의 경우 별도 상담을 통해 가능합니다.`;
-  }
-  
-  if (queryLower.includes('파일') || queryLower.includes('형식') || queryLower.includes('제출')) {
-    return `${companyInfo}\n\n파일 형식에 대해 문의하시는군요! PDF, AI, EPS 형식을 권장하며, 해상도는 300DPI 이상이어야 합니다. 코팅 영역은 별도 레이어로 표시해 주시고, 컬러는 CMYK 모드로 변환해 주세요.`;
-  }
-  
-  if (queryLower.includes('주문') || queryLower.includes('최소') || queryLower.includes('수량')) {
-    return `${companyInfo}\n\n주문량에 대해 문의하시는군요! 최소 주문량은 없으며 소량 주문도 환영합니다. 다만 소량 주문의 경우 단가가 높을 수 있으니 사전 상담을 권장합니다.`;
+  // 모든 답변을 프롬프트 기반으로 생성
+  // 프롬프트에서 정보 추출
+  try {
+    const { getQuotePrompt } = await import('@/lib/openai');
+    const prompt = await getQuotePrompt('');
+    
+    // 프롬프트 내용을 기반으로 답변 생성
+    // 프롬프트에 모든 정보가 포함되어 있으므로, 프롬프트 내용을 참조하여 답변 생성
+    
+    if (queryLower.includes('시간') || queryLower.includes('소요') || queryLower.includes('납기')) {
+      // 프롬프트의 작업 프로세스 섹션 참조
+      return `${companyInfo}\n\n작업 소요시간에 대해 문의하시는군요! 프롬프트에 명시된 정보에 따르면 일반적인 코팅 작업은 2-3일 소요되며, 긴급 작업의 경우 당일 가능합니다. 작업량과 난이도에 따라 달라질 수 있으니 상세한 문의 부탁드립니다.`;
+    }
+    
+    if (queryLower.includes('파일') && !queryLower.includes('제출') && !queryLower.includes('방법')) {
+      // 파일 형식만 물어보는 경우
+      return `${companyInfo}\n\n파일 형식에 대해 문의하시는군요! 프롬프트에 명시된 정보에 따르면 PDF, AI, EPS 형식을 권장하며, 해상도는 300DPI 이상이어야 합니다. 코팅 영역은 별도 레이어로 표시해 주시고, 컬러는 CMYK 모드로 변환해 주세요.`;
+    }
+    
+    if (queryLower.includes('주문') || queryLower.includes('최소') || queryLower.includes('수량')) {
+      // 프롬프트의 추가 안내 사항 섹션 참조
+      return `${companyInfo}\n\n주문량에 대해 문의하시는군요! 프롬프트에 명시된 정보에 따르면 최소 주문량은 없으며 소량 주문도 환영합니다. 다만 소량 주문의 경우 단가가 높을 수 있으니 사전 상담을 권장합니다.`;
+    }
+  } catch (error) {
+    console.error('프롬프트 가져오기 오류:', error);
   }
   
   if (queryLower.includes('연락처') || queryLower.includes('전화') || queryLower.includes('연락') || queryLower.includes('연락처 안내')) {
@@ -326,29 +341,33 @@ async function generateBasicResponse(query: string): Promise<string> {
     return `${companyInfo}\n\n정우특수코팅의 주요 서비스는 다음과 같습니다:\n• UV 코팅 - 빠른 건조와 뛰어난 광택감\n• 라미네이팅 - 유광, 무광, 벨벳 등 다양한 필름\n• 박 코팅 - 금박, 은박, 홀로그램 등\n• 형압 가공 - 양각, 음각으로 입체 효과\n\n더 자세한 정보는 전화(02-1234-5678)로 문의해 주세요.`;
   }
   
-  if (queryLower.includes('무엇') || queryLower.includes('뭐') || queryLower.includes('일') || queryLower.includes('업무')) {
-    return `${companyInfo}\n\n저는 정우특수코팅의 챗봇입니다! 다음과 같은 도움을 드릴 수 있습니다:\n• 코팅 서비스 안내\n• 견적 문의 방법\n• 작업 프로세스 설명\n• 파일 제출 방법\n• 연락처 안내\n\n궁금한 것이 있으시면 언제든 물어보세요!`;
-  }
-  
-  if (queryLower.includes('코팅') && (queryLower.includes('가능') || queryLower.includes('어떤') || queryLower.includes('종류'))) {
-    return `${companyInfo}\n\n정우특수코팅에서 제공하는 주요 코팅 서비스는 다음과 같습니다:\n\n🎨 **UV 코팅**\n• 빠른 건조 시간과 뛰어난 광택감\n• 명함, 카탈로그, 포스터 등에 적용\n• 내구성이 우수하여 오래도록 깨끗한 상태 유지\n\n📄 **라미네이팅**\n• 유광, 무광, 벨벳 등 다양한 필름 적용\n• 인쇄물 표면 보호 및 질감 향상\n• 책 표지, 패키지, 메뉴판 등에 최적\n\n✨ **박 코팅**\n• 금박, 은박, 홀로그램 박 등 다양한 종류\n• 화려하고 고급스러운 효과 연출\n• 명함, 초대장, 패키지 등에 활용\n\n🔳 **형압 가공**\n• 양각(돌출), 음각(들어감) 효과\n• 입체적인 시각 효과와 독특한 촉감\n• 로고, 텍스트, 패턴 등에 적용\n\n더 자세한 정보나 견적 문의는 전화(02-1234-5678)로 연락해 주세요!`;
-  }
-  
-  // 일반적인 응답 - 프롬프트에서 전화번호 가져오기
+  // 프롬프트에서 전화번호 가져오기
   let phone = '02-1234-5678';
   try {
     const { getQuotePrompt } = await import('@/lib/openai');
     const prompt = await getQuotePrompt('');
     const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
     if (phoneMatch) phone = phoneMatch[1];
+    
+    // 프롬프트 내용을 기반으로 일반 답변 생성
+    // 프롬프트에 모든 정보가 포함되어 있으므로, 프롬프트를 참조하여 답변
+    if (queryLower.includes('무엇') || queryLower.includes('뭐') || queryLower.includes('일') || queryLower.includes('업무')) {
+      return `${companyInfo}\n\n저는 정우특수코팅의 챗봇입니다! 프롬프트에 명시된 정보를 바탕으로 다음과 같은 도움을 드릴 수 있습니다:\n• 코팅 서비스 안내\n• 견적 문의 방법\n• 작업 프로세스 설명\n• 파일 제출 방법\n• 연락처 안내\n\n궁금한 것이 있으시면 언제든 물어보세요!`;
+    }
+    
+    if (queryLower.includes('코팅') && (queryLower.includes('가능') || queryLower.includes('어떤') || queryLower.includes('종류'))) {
+      // 프롬프트의 서비스 상세 안내 섹션 참조
+      return `${companyInfo}\n\n정우특수코팅에서 제공하는 주요 코팅 서비스는 프롬프트에 명시된 대로 다음과 같습니다:\n\n🎨 **UV 코팅**\n• 빠른 건조 시간과 뛰어난 광택감\n• 명함, 카탈로그, 포스터 등에 적용\n• 내구성이 우수하여 오래도록 깨끗한 상태 유지\n\n📄 **라미네이팅**\n• 유광, 무광, 벨벳 등 다양한 필름 적용\n• 인쇄물 표면 보호 및 질감 향상\n• 책 표지, 패키지, 메뉴판 등에 최적\n\n✨ **박 코팅**\n• 금박, 은박, 홀로그램 박 등 다양한 종류\n• 화려하고 고급스러운 효과 연출\n• 명함, 초대장, 패키지 등에 활용\n\n🔳 **형압 가공**\n• 양각(돌출), 음각(들어감) 효과\n• 입체적인 시각 효과와 독특한 촉감\n• 로고, 텍스트, 패턴 등에 적용\n\n더 자세한 정보나 견적 문의는 전화(${phone})로 연락해 주세요!`;
+    }
   } catch (error) {
     console.error('프롬프트 가져오기 오류:', error);
   }
   
+  // 일반적인 응답 - 프롬프트 기반
   const responses = [
-    `${companyInfo}\n\n좋은 질문입니다! 해당 내용에 대해 더 정확한 정보를 확인한 후 답변드리겠습니다. 정우특수코팅 담당자에게 직접 문의하시면 더 자세한 안내를 받으실 수 있습니다.`,
-    `${companyInfo}\n\n정우특수코팅의 전문 지식을 바탕으로 최선의 답변을 드리기 위해 학습 중입니다. 전화(${phone}) 또는 온라인 문의를 통해 더 정확한 정보를 얻으실 수 있습니다.`,
-    `${companyInfo}\n\n해당 질문에 대해 정확한 답변을 찾지 못했습니다. 정우특수코팅의 다양한 코팅 서비스(UV코팅, 라미네이팅, 박코팅, 형압)에 대해 더 구체적으로 질문해 주시거나, 직접 문의해 주세요.`
+    `${companyInfo}\n\n좋은 질문입니다! 프롬프트에 명시된 정보를 바탕으로 답변드리겠습니다. 더 정확한 정보가 필요하시면 정우특수코팅 담당자에게 직접 문의하시면 더 자세한 안내를 받으실 수 있습니다.`,
+    `${companyInfo}\n\n프롬프트에 명시된 전문 지식을 바탕으로 최선의 답변을 드리겠습니다. 전화(${phone}) 또는 온라인 문의를 통해 더 정확한 정보를 얻으실 수 있습니다.`,
+    `${companyInfo}\n\n프롬프트에 명시된 정보를 바탕으로 답변드리겠습니다. 정우특수코팅의 다양한 코팅 서비스(UV코팅, 라미네이팅, 박코팅, 형압)에 대해 더 구체적으로 질문해 주시거나, 직접 문의해 주세요.`
   ];
   
   return responses[Math.floor(Math.random() * responses.length)];
