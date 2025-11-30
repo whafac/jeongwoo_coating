@@ -5,6 +5,14 @@ export const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null;
 
+// Gemini API 키 확인 로그 (서버 시작 시)
+if (genAI) {
+  console.log('✅ [Gemini Pro] API 키가 설정되어 있습니다.');
+  console.log('🔑 [Gemini Pro] API 키 시작:', process.env.GEMINI_API_KEY?.substring(0, 10) + '...');
+} else {
+  console.log('⚠️  [Gemini Pro] API 키가 설정되지 않았습니다. Fallback 모드로 작동합니다.');
+}
+
 // 프롬프트 가져오기 함수 (기존 함수 재사용)
 export async function getQuotePrompt(context: string = ''): Promise<string> {
   // 기존 lib/openai.ts의 getQuotePrompt 함수 재사용
@@ -59,6 +67,7 @@ export async function generateChatbotResponse(
 ): Promise<string> {
   // Gemini API 키가 없는 경우 기존 fallback 로직 사용
   if (!genAI) {
+    console.log('⚠️  [Fallback] Gemini API 키가 없어 Fallback 모드로 작동합니다.');
     // 기존 generateQuoteResponse 또는 generateBasicResponse 사용
     const { generateQuoteResponse } = await import('@/lib/openai');
     if (isQuoteInquiry) {
@@ -95,6 +104,10 @@ export async function generateChatbotResponse(
     // DB에서 프롬프트 가져오기
     const prompt = await getQuotePrompt(context);
     
+    // Gemini 사용 확인 로그
+    console.log('🤖 [Gemini Pro] 챗봇 응답 생성 시작');
+    console.log('📝 [Gemini Pro] 프롬프트 길이:', prompt.length, '자');
+    
     // Gemini 모델 초기화 (System Instructions 설정)
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-pro',
@@ -103,6 +116,8 @@ export async function generateChatbotResponse(
         role: 'system'
       }
     });
+    
+    console.log('✅ [Gemini Pro] 모델 초기화 완료: gemini-pro');
 
     // 대화 기록을 Gemini 형식으로 변환
     const chatHistory = conversationHistory.slice(-6).map(msg => ({
@@ -128,10 +143,19 @@ export async function generateChatbotResponse(
       throw new Error('Gemini API 응답이 비어있습니다.');
     }
 
+    // Gemini 사용 확인 로그
+    console.log('✅ [Gemini Pro] API 응답 수신 완료');
+    console.log('📤 [Gemini Pro] 원본 답변 길이:', response.length, '자');
+    
     // 답변 최적화 적용
-    return optimizeResponse(response.trim());
+    const optimizedResponse = optimizeResponse(response.trim());
+    console.log('✨ [Gemini Pro] 최적화된 답변 길이:', optimizedResponse.length, '자');
+    console.log('🎯 [Gemini Pro] 최종 답변:', optimizedResponse.substring(0, 100) + '...');
+    
+    return optimizedResponse;
   } catch (error) {
-    console.error('Gemini API 오류:', error);
+    console.error('❌ [Gemini Pro] API 오류:', error);
+    console.log('⚠️  [Fallback] Gemini API 오류로 인해 Fallback 모드로 전환합니다.');
     // 에러 발생 시 fallback 로직 사용
     try {
       const { generateQuoteResponse } = await import('@/lib/openai');
