@@ -213,6 +213,11 @@ export async function generateChatbotResponse(
     }
   }
   
+  // ============================================
+  // ChatGPT API 코드 (주석 처리 - Gemini Pro로 전환)
+  // 나중에 되돌릴 수 있도록 보존
+  // ============================================
+  /*
   try {
     // 모든 경우에 DB에서 프롬프트 가져오기 (견적 문의든 아니든 모두 동일한 프롬프트 사용)
     const prompt = await getQuotePrompt(context);
@@ -245,6 +250,14 @@ export async function generateChatbotResponse(
     console.error('OpenAI API 오류:', error);
     throw new Error('AI 응답 생성 중 오류가 발생했습니다.');
   }
+  */
+  // ============================================
+  // ChatGPT 코드 끝
+  // ============================================
+  
+  // Gemini Pro로 전환되었으므로 이 함수는 더 이상 사용되지 않음
+  // 대신 lib/gemini.ts의 generateChatbotResponse를 사용
+  throw new Error('이 함수는 더 이상 사용되지 않습니다. lib/gemini.ts의 generateChatbotResponse를 사용하세요.');
 }
 
 // 토큰 사용량 추적 함수

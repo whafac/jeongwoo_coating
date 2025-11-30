@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/database';
-import { generateChatbotResponse, calculateTokenUsage, calculateCost, generateQuoteResponse } from '@/lib/openai';
+// Gemini Pro 사용 (NotebookLM과 동일한 모델)
+import { generateChatbotResponse, calculateTokenUsage, calculateCost, generateQuoteResponse } from '@/lib/gemini';
+// ChatGPT 코드는 주석 처리 (나중에 되돌릴 수 있도록 보존)
+// import { generateChatbotResponse, calculateTokenUsage, calculateCost, generateQuoteResponse } from '@/lib/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,8 +86,11 @@ export async function POST(request: NextRequest) {
         console.error('AI 응답 생성 실패:', aiError);
         // 견적 문의인 경우 데이터베이스 프롬프트 기반 답변 사용
         if (isQuote) {
-          const { generateQuoteResponse } = await import('@/lib/openai');
+          // Gemini fallback 사용
           botResponse = await generateQuoteResponse(message);
+          // ChatGPT 코드는 주석 처리 (나중에 되돌릴 수 있도록 보존)
+          // const { generateQuoteResponse } = await import('@/lib/openai');
+          // botResponse = await generateQuoteResponse(message);
         } else {
           botResponse = await generateBasicResponse(message);
         }

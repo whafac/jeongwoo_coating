@@ -1,0 +1,167 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Gemini 클라이언트 초기화
+export const genAI = process.env.GEMINI_API_KEY 
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
+
+// 프롬프트 가져오기 함수 (기존 함수 재사용)
+export async function getQuotePrompt(context: string = ''): Promise<string> {
+  // 기존 lib/openai.ts의 getQuotePrompt 함수 재사용
+  const { getQuotePrompt: getPrompt } = await import('@/lib/openai');
+  return getPrompt(context);
+}
+
+// 답변 최적화 함수 (기존 함수 재사용)
+function optimizeResponse(response: string): string {
+  let optimized = response
+    // 불필요한 패턴 제거
+    .replace(/프롬프트에 명시된 정보를 바탕으로/g, '')
+    .replace(/프롬프트에 명시된/g, '')
+    .replace(/정우특수코팅은 1999년 설립된[^]*?기업입니다\./g, '')
+    .replace(/20년 이상의 경험과 노하우를[^]*?\./g, '')
+    .replace(/더 자세한 정보는[^]*?문의해 주세요\./g, '')
+    .replace(/친절하게 안내해 드리겠습니다! 😊/g, '')
+    .replace(/친절하게 안내해 드리겠습니다\./g, '')
+    .replace(/\n{3,}/g, '\n\n') // 연속된 줄바꿈 정리
+    .trim();
+  
+  // 길이 제한 (200자)
+  if (optimized.length > 200) {
+    // 문장 단위로 자르기
+    const sentences = optimized.split(/[.!?]\s+/);
+    let result = '';
+    for (const sentence of sentences) {
+      if ((result + sentence).length <= 200) {
+        result += sentence + '. ';
+      } else {
+        break;
+      }
+    }
+    optimized = result.trim();
+  }
+  
+  return optimized.trim();
+}
+
+// 견적 관련 기본 답변 생성 함수 (fallback용)
+export async function generateQuoteResponse(userMessage: string): Promise<string> {
+  const { generateQuoteResponse: getQuoteResponse } = await import('@/lib/openai');
+  return getQuoteResponse(userMessage);
+}
+
+// Gemini API를 사용한 챗봇 응답 생성
+export async function generateChatbotResponse(
+  userMessage: string,
+  context: string,
+  conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = [],
+  isQuoteInquiry: boolean = false
+): Promise<string> {
+  // Gemini API 키가 없는 경우 기존 fallback 로직 사용
+  if (!genAI) {
+    // 기존 generateQuoteResponse 또는 generateBasicResponse 사용
+    const { generateQuoteResponse } = await import('@/lib/openai');
+    if (isQuoteInquiry) {
+      return await generateQuoteResponse(userMessage);
+    }
+    // 일반 문의인 경우도 DB 프롬프트 기반으로 답변 생성
+    try {
+      const prompt = await getQuotePrompt(context);
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const emailMatch = prompt.match(/이메일[:\s]*([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      const email = emailMatch ? emailMatch[1] : 'info@jeongwoo.co.kr';
+      const messageLower = userMessage.toLowerCase();
+      
+      if (messageLower.includes('연락처') || messageLower.includes('전화') || messageLower.includes('연락') || messageLower.includes('연락처 안내')) {
+        const contactMatch = prompt.match(/연락처 안내[^]*?(?=\n\n|$)/i);
+        if (contactMatch) {
+          let contactResponse = contactMatch[0];
+          contactResponse = contactResponse.replace(/02-[0-9-]+/g, phone);
+          contactResponse = contactResponse.replace(/info@[^\s]+/g, email);
+          return contactResponse;
+        }
+        return `연락처 정보:\n\n📞 전화: ${phone}\n📧 이메일: ${email}\n\n온라인 문의 폼: /contact`;
+      }
+      
+      return optimizeResponse(`어떤 도움이 필요하신가요? 견적 문의나 서비스 안내를 도와드릴 수 있습니다. 전화(${phone})로 문의해 주세요.`);
+    } catch (error) {
+      console.error('프롬프트 기반 답변 생성 오류:', error);
+      return '죄송합니다. 일시적인 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
+    }
+  }
+
+  try {
+    // DB에서 프롬프트 가져오기
+    const prompt = await getQuotePrompt(context);
+    
+    // Gemini 모델 초기화 (System Instructions 설정)
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-pro',
+      systemInstruction: {
+        parts: [{ text: prompt }],
+        role: 'system'
+      }
+    });
+
+    // 대화 기록을 Gemini 형식으로 변환
+    const chatHistory = conversationHistory.slice(-6).map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Gemini API 호출
+    const chat = model.startChat({
+      history: chatHistory,
+      generationConfig: {
+        maxOutputTokens: 200,      // 간결한 답변 강제
+        temperature: 0.3,           // 정확하고 간결한 답변
+        topP: 0.8,
+        topK: 40,
+      },
+    });
+
+    const result = await chat.sendMessage(userMessage);
+    const response = result.response.text();
+    
+    if (!response) {
+      throw new Error('Gemini API 응답이 비어있습니다.');
+    }
+
+    // 답변 최적화 적용
+    return optimizeResponse(response.trim());
+  } catch (error) {
+    console.error('Gemini API 오류:', error);
+    // 에러 발생 시 fallback 로직 사용
+    try {
+      const { generateQuoteResponse } = await import('@/lib/openai');
+      if (isQuoteInquiry) {
+        return await generateQuoteResponse(userMessage);
+      }
+      const prompt = await getQuotePrompt(context);
+      const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
+      const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
+      return optimizeResponse(`어떤 도움이 필요하신가요? 견적 문의나 서비스 안내를 도와드릴 수 있습니다. 전화(${phone})로 문의해 주세요.`);
+    } catch (fallbackError) {
+      console.error('Fallback 응답 생성 오류:', fallbackError);
+      throw new Error('AI 응답 생성 중 오류가 발생했습니다.');
+    }
+  }
+}
+
+// 토큰 사용량 추적 함수 (Gemini용 - 대략적 추정)
+export function calculateTokenUsage(messages: Array<{role: string, content: string}>): number {
+  // 간단한 토큰 추정 (실제로는 정확한 계산 필요)
+  return messages.reduce((total, message) => {
+    return total + Math.ceil(message.content.length / 4); // 대략적인 토큰 계산
+  }, 0);
+}
+
+// 비용 계산 함수 (Gemini Pro 기준)
+export function calculateCost(inputTokens: number, outputTokens: number): number {
+  const inputCostPer1K = 0.003; // $0.003 per 1K tokens (Gemini Pro)
+  const outputCostPer1K = 0.012; // $0.012 per 1K tokens (Gemini Pro)
+  
+  return (inputTokens / 1000 * inputCostPer1K) + (outputTokens / 1000 * outputCostPer1K);
+}
+
