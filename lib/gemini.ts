@@ -117,6 +117,21 @@ export async function generateChatbotResponse(
     // DB에서 프롬프트 가져오기
     const prompt = await getQuotePrompt(context);
     
+    // 프롬프트 확인 로그 (디버깅용)
+    console.log('📋 [Gemini Pro] ========== 프롬프트 확인 ==========');
+    console.log('📋 [Gemini Pro] 프롬프트 전체 길이:', prompt.length, '자');
+    console.log('📋 [Gemini Pro] 프롬프트 시작 부분:', prompt.substring(0, 200) + '...');
+    console.log('📋 [Gemini Pro] 프롬프트에 "라미네이팅" 포함 여부:', prompt.includes('라미네이팅') ? '✅ 포함됨' : '❌ 포함되지 않음');
+    console.log('📋 [Gemini Pro] 프롬프트에 "기본 단가" 포함 여부:', prompt.includes('기본 단가') ? '✅ 포함됨' : '❌ 포함되지 않음');
+    console.log('📋 [Gemini Pro] 프롬프트에 "수량별 할인" 포함 여부:', prompt.includes('수량별 할인') ? '✅ 포함됨' : '❌ 포함되지 않음');
+    if (prompt.includes('라미네이팅')) {
+      const laminatingMatch = prompt.match(/라미네이팅[^]*?(?=\n\n|$)/i);
+      if (laminatingMatch) {
+        console.log('📋 [Gemini Pro] 라미네이팅 관련 섹션:', laminatingMatch[0].substring(0, 300) + '...');
+      }
+    }
+    console.log('📋 [Gemini Pro] ====================================');
+    
     // 사용자 메시지 분석 (서비스별 구체적 답변을 위해)
     const messageLower = userMessage.toLowerCase();
     let enhancedMessage = userMessage;
@@ -187,6 +202,8 @@ export async function generateChatbotResponse(
       console.log('📊 [Gemini Pro] 상세 견적 질문 감지 - maxOutputTokens: 500으로 설정');
     }
 
+    console.log('📤 [Gemini Pro] Gemini API에 메시지 전송:', enhancedMessage.substring(0, 100) + '...');
+    
     const result = await chat.sendMessage(enhancedMessage);
     const response = result.response.text();
     
@@ -197,6 +214,9 @@ export async function generateChatbotResponse(
     // Gemini 사용 확인 로그
     console.log('✅ [Gemini Pro] API 응답 수신 완료');
     console.log('📤 [Gemini Pro] 원본 답변 길이:', response.length, '자');
+    console.log('📤 [Gemini Pro] 원본 답변 전체:', response);
+    console.log('📤 [Gemini Pro] 답변에 "라미네이팅" 포함 여부:', response.includes('라미네이팅') ? '✅ 포함됨' : '❌ 포함되지 않음');
+    console.log('📤 [Gemini Pro] 답변에 "기본 단가" 포함 여부:', response.includes('기본 단가') ? '✅ 포함됨' : '❌ 포함되지 않음');
     
     // 답변 최적화 적용 (상세 견적 질문인지 확인)
     const optimizedResponse = optimizeResponse(response.trim(), isDetailedQuoteQuestion);

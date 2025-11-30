@@ -30,7 +30,10 @@ export async function getQuotePrompt(context: string = ''): Promise<string> {
 
       if (settings?.setting_value) {
         const prompt = settings.setting_value as string;
-        console.log('✅ 데이터베이스에서 프롬프트를 성공적으로 가져왔습니다.');
+        console.log('✅ [DB] 데이터베이스에서 프롬프트를 성공적으로 가져왔습니다.');
+        console.log('✅ [DB] 프롬프트 길이:', prompt.length, '자');
+        console.log('✅ [DB] 프롬프트 시작 부분:', prompt.substring(0, 200) + '...');
+        console.log('✅ [DB] 프롬프트 끝 부분:', '...' + prompt.substring(Math.max(0, prompt.length - 200)));
         return context ? `${prompt}\n\n${context ? `\n📋 **추가 컨텍스트:**\n${context}` : ''}` : prompt;
       } else {
         console.error('❌ DB에 프롬프트가 저장되어 있지 않습니다. 관리자 페이지에서 프롬프트를 저장해주세요.');
