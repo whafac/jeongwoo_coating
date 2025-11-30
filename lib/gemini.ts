@@ -21,7 +21,8 @@ export async function getQuotePrompt(context: string = ''): Promise<string> {
 }
 
 // 답변 최적화 함수 (기존 함수 재사용)
-function optimizeResponse(response: string): string {
+// 서비스별 견적 질문인지 확인하기 위한 파라미터 추가
+function optimizeResponse(response: string, isDetailedQuote: boolean = false): string {
   let optimized = response
     // 불필요한 패턴 제거
     .replace(/프롬프트에 명시된 정보를 바탕으로/g, '')
@@ -34,13 +35,25 @@ function optimizeResponse(response: string): string {
     .replace(/\n{3,}/g, '\n\n') // 연속된 줄바꿈 정리
     .trim();
   
-  // 길이 제한 (200자)
-  if (optimized.length > 200) {
+  // 길이 제한 (견적 질문은 더 긴 답변 허용)
+  // 일반 질문: 200자, 견적 질문: 500자
+  const maxLength = isDetailedQuote || 
+                     optimized.includes('기본 단가') || 
+                     optimized.includes('수량별 할인') || 
+                     optimized.includes('유광') || 
+                     optimized.includes('무광') ||
+                     optimized.includes('금박') ||
+                     optimized.includes('은박') ||
+                     optimized.includes('양각') ||
+                     optimized.includes('음각')
+                     ? 500 : 200;
+  
+  if (optimized.length > maxLength) {
     // 문장 단위로 자르기
     const sentences = optimized.split(/[.!?]\s+/);
     let result = '';
     for (const sentence of sentences) {
-      if ((result + sentence).length <= 200) {
+      if ((result + sentence).length <= maxLength) {
         result += sentence + '. ';
       } else {
         break;
@@ -109,18 +122,19 @@ export async function generateChatbotResponse(
     let enhancedMessage = userMessage;
     
     // 서비스별 키워드 감지 및 메시지 보강
+    // NotebookLM처럼 구체적인 정보를 요청하도록 메시지 보강
     if (messageLower.includes('라미네이팅') || messageLower.includes('quote-laminating')) {
-      enhancedMessage = `라미네이팅 견적에 대해 구체적으로 알려주세요. 라미네이팅의 기본 단가, 수량별 할인, 필름 종류(유광/무광/벨벳), 견적에 필요한 정보를 포함해서 답변해주세요.`;
-      console.log('📌 [Gemini Pro] 라미네이팅 견적 질문 감지');
+      enhancedMessage = `라미네이팅 견적에 대해 상세히 안내해주세요. 프롬프트에 있는 라미네이팅 관련 모든 정보(기본 단가, 수량별 할인, 필름 종류별 가격, 견적에 필요한 정보)를 포함하여 NotebookLM처럼 구체적이고 상세하게 답변해주세요.`;
+      console.log('📌 [Gemini Pro] 라미네이팅 견적 질문 감지 - 상세 답변 요청');
     } else if (messageLower.includes('uv') && (messageLower.includes('코팅') || messageLower.includes('quote-uv'))) {
-      enhancedMessage = `UV 코팅 견적에 대해 구체적으로 알려주세요. UV 코팅의 기본 단가, 수량별 할인, 견적에 필요한 정보를 포함해서 답변해주세요.`;
-      console.log('📌 [Gemini Pro] UV 코팅 견적 질문 감지');
+      enhancedMessage = `UV 코팅 견적에 대해 상세히 안내해주세요. 프롬프트에 있는 UV 코팅 관련 모든 정보(기본 단가, 수량별 할인, 견적에 필요한 정보)를 포함하여 NotebookLM처럼 구체적이고 상세하게 답변해주세요.`;
+      console.log('📌 [Gemini Pro] UV 코팅 견적 질문 감지 - 상세 답변 요청');
     } else if (messageLower.includes('박') && (messageLower.includes('코팅') || messageLower.includes('quote-foil'))) {
-      enhancedMessage = `박 코팅 견적에 대해 구체적으로 알려주세요. 박 코팅의 기본 단가, 수량별 할인, 박 종류(금박/은박/홀로그램), 견적에 필요한 정보를 포함해서 답변해주세요.`;
-      console.log('📌 [Gemini Pro] 박 코팅 견적 질문 감지');
+      enhancedMessage = `박 코팅 견적에 대해 상세히 안내해주세요. 프롬프트에 있는 박 코팅 관련 모든 정보(기본 단가, 수량별 할인, 박 종류별 가격, 견적에 필요한 정보)를 포함하여 NotebookLM처럼 구체적이고 상세하게 답변해주세요.`;
+      console.log('📌 [Gemini Pro] 박 코팅 견적 질문 감지 - 상세 답변 요청');
     } else if (messageLower.includes('형압') || messageLower.includes('quote-embossing')) {
-      enhancedMessage = `형압 가공 견적에 대해 구체적으로 알려주세요. 형압 가공의 기본 단가, 수량별 할인, 가공 종류(양각/음각), 견적에 필요한 정보를 포함해서 답변해주세요.`;
-      console.log('📌 [Gemini Pro] 형압 가공 견적 질문 감지');
+      enhancedMessage = `형압 가공 견적에 대해 상세히 안내해주세요. 프롬프트에 있는 형압 가공 관련 모든 정보(기본 단가, 수량별 할인, 가공 종류별 가격, 견적에 필요한 정보)를 포함하여 NotebookLM처럼 구체적이고 상세하게 답변해주세요.`;
+      console.log('📌 [Gemini Pro] 형압 가공 견적 질문 감지 - 상세 답변 요청');
     }
     
     // Gemini 사용 확인 로그
@@ -149,15 +163,29 @@ export async function generateChatbotResponse(
     }));
 
     // Gemini API 호출
+    // 서비스별 견적 질문인 경우 더 긴 답변 허용 (NotebookLM처럼 상세한 정보 제공)
+    const isDetailedQuoteQuestion = messageLower.includes('라미네이팅') || 
+                                     messageLower.includes('quote-laminating') ||
+                                     messageLower.includes('uv') && messageLower.includes('코팅') ||
+                                     messageLower.includes('quote-uv') ||
+                                     messageLower.includes('박') && messageLower.includes('코팅') ||
+                                     messageLower.includes('quote-foil') ||
+                                     messageLower.includes('형압') ||
+                                     messageLower.includes('quote-embossing');
+    
     const chat = model.startChat({
       history: chatHistory,
       generationConfig: {
-        maxOutputTokens: 200,      // 간결한 답변 강제
+        maxOutputTokens: isDetailedQuoteQuestion ? 500 : 200,  // 견적 질문은 상세 답변 허용
         temperature: 0.3,           // 정확하고 간결한 답변
         topP: 0.8,
         topK: 40,
       },
     });
+    
+    if (isDetailedQuoteQuestion) {
+      console.log('📊 [Gemini Pro] 상세 견적 질문 감지 - maxOutputTokens: 500으로 설정');
+    }
 
     const result = await chat.sendMessage(enhancedMessage);
     const response = result.response.text();
@@ -170,10 +198,10 @@ export async function generateChatbotResponse(
     console.log('✅ [Gemini Pro] API 응답 수신 완료');
     console.log('📤 [Gemini Pro] 원본 답변 길이:', response.length, '자');
     
-    // 답변 최적화 적용
-    const optimizedResponse = optimizeResponse(response.trim());
+    // 답변 최적화 적용 (상세 견적 질문인지 확인)
+    const optimizedResponse = optimizeResponse(response.trim(), isDetailedQuoteQuestion);
     console.log('✨ [Gemini Pro] 최적화된 답변 길이:', optimizedResponse.length, '자');
-    console.log('🎯 [Gemini Pro] 최종 답변:', optimizedResponse.substring(0, 100) + '...');
+    console.log('🎯 [Gemini Pro] 최종 답변:', optimizedResponse.substring(0, 150) + (optimizedResponse.length > 150 ? '...' : ''));
     
     return optimizedResponse;
   } catch (error) {
@@ -188,7 +216,7 @@ export async function generateChatbotResponse(
       const prompt = await getQuotePrompt(context);
       const phoneMatch = prompt.match(/전화[\(\)\s]*([0-9-]+)/);
       const phone = phoneMatch ? phoneMatch[1] : '02-1234-5678';
-      return optimizeResponse(`어떤 도움이 필요하신가요? 견적 문의나 서비스 안내를 도와드릴 수 있습니다. 전화(${phone})로 문의해 주세요.`);
+      return optimizeResponse(`어떤 도움이 필요하신가요? 견적 문의나 서비스 안내를 도와드릴 수 있습니다. 전화(${phone})로 문의해 주세요.`, false);
     } catch (fallbackError) {
       console.error('Fallback 응답 생성 오류:', fallbackError);
       throw new Error('AI 응답 생성 중 오류가 발생했습니다.');
