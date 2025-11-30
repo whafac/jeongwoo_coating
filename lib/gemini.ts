@@ -106,7 +106,7 @@ export async function generateChatbotResponse(
         return `연락처 정보:\n\n📞 전화: ${phone}\n📧 이메일: ${email}\n\n온라인 문의 폼: /contact`;
       }
       
-      return optimizeResponse(`어떤 도움이 필요하신가요? 견적 문의나 서비스 안내를 도와드릴 수 있습니다. 전화(${phone})로 문의해 주세요.`);
+      return optimizeResponse(`어떤 도움이 필요하신가요? 견적 문의나 서비스 안내를 도와드릴 수 있습니다. 전화(${phone})로 문의해 주세요.`, false);
     } catch (error) {
       console.error('프롬프트 기반 답변 생성 오류:', error);
       return '죄송합니다. 일시적인 오류가 발생했습니다. 정우특수코팅 담당자에게 직접 문의해 주세요.';
