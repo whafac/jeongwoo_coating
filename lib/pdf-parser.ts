@@ -1,4 +1,5 @@
-import pdf from 'pdf-parse';
+// pdf-parse를 동적 import로 변경하여 서버 사이드에서만 로드
+// Next.js 빌드 시 클라이언트 번들에 포함되지 않도록 함
 
 export interface PDFParseResult {
   text: string;
@@ -18,6 +19,8 @@ export interface PDFParseResult {
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<PDFParseResult> {
   try {
+    // 동적 import로 서버 사이드에서만 로드
+    const pdf = (await import('pdf-parse')).default;
     const data = await pdf(buffer);
     
     return {
