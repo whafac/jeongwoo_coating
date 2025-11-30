@@ -104,9 +104,32 @@ export async function generateChatbotResponse(
     // DB에서 프롬프트 가져오기
     const prompt = await getQuotePrompt(context);
     
+    // 사용자 메시지 분석 (서비스별 구체적 답변을 위해)
+    const messageLower = userMessage.toLowerCase();
+    let enhancedMessage = userMessage;
+    
+    // 서비스별 키워드 감지 및 메시지 보강
+    if (messageLower.includes('라미네이팅') || messageLower.includes('quote-laminating')) {
+      enhancedMessage = `라미네이팅 견적에 대해 구체적으로 알려주세요. 라미네이팅의 기본 단가, 수량별 할인, 필름 종류(유광/무광/벨벳), 견적에 필요한 정보를 포함해서 답변해주세요.`;
+      console.log('📌 [Gemini Pro] 라미네이팅 견적 질문 감지');
+    } else if (messageLower.includes('uv') && (messageLower.includes('코팅') || messageLower.includes('quote-uv'))) {
+      enhancedMessage = `UV 코팅 견적에 대해 구체적으로 알려주세요. UV 코팅의 기본 단가, 수량별 할인, 견적에 필요한 정보를 포함해서 답변해주세요.`;
+      console.log('📌 [Gemini Pro] UV 코팅 견적 질문 감지');
+    } else if (messageLower.includes('박') && (messageLower.includes('코팅') || messageLower.includes('quote-foil'))) {
+      enhancedMessage = `박 코팅 견적에 대해 구체적으로 알려주세요. 박 코팅의 기본 단가, 수량별 할인, 박 종류(금박/은박/홀로그램), 견적에 필요한 정보를 포함해서 답변해주세요.`;
+      console.log('📌 [Gemini Pro] 박 코팅 견적 질문 감지');
+    } else if (messageLower.includes('형압') || messageLower.includes('quote-embossing')) {
+      enhancedMessage = `형압 가공 견적에 대해 구체적으로 알려주세요. 형압 가공의 기본 단가, 수량별 할인, 가공 종류(양각/음각), 견적에 필요한 정보를 포함해서 답변해주세요.`;
+      console.log('📌 [Gemini Pro] 형압 가공 견적 질문 감지');
+    }
+    
     // Gemini 사용 확인 로그
     console.log('🤖 [Gemini Pro] 챗봇 응답 생성 시작');
     console.log('📝 [Gemini Pro] 프롬프트 길이:', prompt.length, '자');
+    console.log('💬 [Gemini Pro] 사용자 메시지:', userMessage);
+    if (enhancedMessage !== userMessage) {
+      console.log('✨ [Gemini Pro] 메시지 보강:', enhancedMessage);
+    }
     
     // Gemini 모델 초기화 (System Instructions 설정)
     const model = genAI.getGenerativeModel({ 
@@ -136,7 +159,7 @@ export async function generateChatbotResponse(
       },
     });
 
-    const result = await chat.sendMessage(userMessage);
+    const result = await chat.sendMessage(enhancedMessage);
     const response = result.response.text();
     
     if (!response) {
