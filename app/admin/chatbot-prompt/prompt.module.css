@@ -251,6 +251,99 @@
   min-height: 60vh;
 }
 
+/* 문서 업로드 섹션 */
+.documentSection {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.documentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.documentHeader h2 {
+  color: var(--primary-color);
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.toggleButton {
+  background: var(--light-gray);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.6rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.toggleButton:hover {
+  background: #e9ecef;
+  border-color: var(--text-secondary);
+}
+
+.uploadArea {
+  margin-bottom: 2rem;
+}
+
+.uploadLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  border: 3px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--light-gray);
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.uploadLabel:hover {
+  border-color: var(--primary-color);
+  background: #f0f7ff;
+}
+
+.documentList {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid var(--border-color);
+}
+
+.documentItem {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.documentItem:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-color);
+}
+
+.documentItem h4 {
+  color: var(--primary-color);
+  margin: 0 0 0.5rem 0;
+}
+
+.deleteButton:hover {
+  background: #d32f2f !important;
+  transform: translateY(-1px);
+}
+
 @media (max-width: 768px) {
   .pageHeader {
     padding: 2rem 0 1.5rem;
@@ -285,6 +378,15 @@
   .editorFooter {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .documentHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .documentItem {
+    flex-direction: column;
   }
 }
 

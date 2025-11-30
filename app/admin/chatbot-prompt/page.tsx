@@ -10,6 +10,22 @@ interface PromptData {
   isDefault?: boolean;
 }
 
+interface Document {
+  baseName: string;
+  fileName: string;
+  chunks: Array<{
+    id: string;
+    title: string;
+    content: string;
+    created_at: string;
+    usage_count: number;
+  }>;
+  tags: string[];
+  totalChunks: number;
+  firstUploaded: string;
+  lastUpdated: string;
+}
+
 export default function ChatbotPromptPage() {
   const router = useRouter();
   const [promptData, setPromptData] = useState<PromptData>({
@@ -20,6 +36,13 @@ export default function ChatbotPromptPage() {
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // 문서 업로드 관련 상태
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
@@ -39,6 +62,7 @@ export default function ChatbotPromptPage() {
 
   useEffect(() => {
     fetchPrompt();
+    fetchDocuments();
   }, []);
 
   // textarea 높이 자동 조정 (스크롤 위치 유지) - 편집 모드일 때만
@@ -214,6 +238,104 @@ export default function ChatbotPromptPage() {
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 100);
+    }
+  };
+
+  // 문서 목록 가져오기
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch('/api/admin/chatbot/upload-document');
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setDocuments(data.documents || []);
+      }
+    } catch (error) {
+      console.error('문서 목록 조회 오류:', error);
+    }
+  };
+
+  // 파일 업로드 처리
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      setMessage('❌ PDF 파일만 업로드할 수 있습니다.');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage('❌ 파일 크기는 10MB를 초과할 수 없습니다.');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+      setMessage('');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/chatbot/upload-document', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setMessage(`✅ PDF 파일이 성공적으로 업로드되었습니다. (${result.data.pageCount}페이지, ${result.data.chunksCount}개 청크로 분할)`);
+        setUploadProgress(100);
+        fetchDocuments(); // 문서 목록 새로고침
+        setTimeout(() => {
+          setMessage('');
+          setUploadProgress(0);
+        }, 5000);
+      } else {
+        setMessage(`❌ 업로드 실패: ${result.error || '알 수 없는 오류'}`);
+        setTimeout(() => setMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('파일 업로드 오류:', error);
+      setMessage('❌ 파일 업로드 중 오류가 발생했습니다.');
+      setTimeout(() => setMessage(''), 5000);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // 문서 삭제
+  const handleDeleteDocument = async (chunkId: string, fileName: string) => {
+    if (!confirm(`"${fileName}" 문서를 삭제하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/chatbot/upload-document?id=${chunkId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setMessage('✅ 문서가 삭제되었습니다.');
+        fetchDocuments(); // 문서 목록 새로고침
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`❌ 삭제 실패: ${result.error || '알 수 없는 오류'}`);
+        setTimeout(() => setMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('문서 삭제 오류:', error);
+      setMessage('❌ 문서 삭제 중 오류가 발생했습니다.');
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
@@ -497,6 +619,142 @@ export default function ChatbotPromptPage() {
             <div className={styles.previewBox}>
               <pre>{promptData.quotePrompt}</pre>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Document Upload Section */}
+      <section className="section" style={{background: '#f9f9f9'}}>
+        <div className="container">
+          <div className={styles.documentSection}>
+            <div className={styles.documentHeader}>
+              <h2>📄 문서 업로드 (NotebookLM 스타일)</h2>
+              <button
+                onClick={() => setShowDocuments(!showDocuments)}
+                className={styles.toggleButton}
+              >
+                {showDocuments ? '▲ 문서 목록 숨기기' : '▼ 문서 목록 보기'}
+              </button>
+            </div>
+            
+            <p style={{marginBottom: '1.5rem', color: '#666'}}>
+              PDF 파일을 업로드하면 자동으로 텍스트를 추출하여 지식베이스에 저장합니다. 
+              챗봇이 업로드한 문서의 내용을 기반으로 답변할 수 있습니다.
+            </p>
+
+            {/* 파일 업로드 영역 */}
+            <div className={styles.uploadArea}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                style={{display: 'none'}}
+                id="pdf-upload-input"
+              />
+              <label
+                htmlFor="pdf-upload-input"
+                className={styles.uploadLabel}
+                style={{
+                  opacity: uploading ? 0.6 : 1,
+                  cursor: uploading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {uploading ? (
+                  <div style={{textAlign: 'center'}}>
+                    <div style={{marginBottom: '1rem'}}>📤 업로드 중...</div>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      background: '#e0e0e0',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${uploadProgress}%`,
+                        height: '100%',
+                        background: '#4caf50',
+                        transition: 'width 0.3s'
+                      }}></div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{fontSize: '3rem', marginBottom: '1rem'}}>📄</div>
+                    <div style={{fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem'}}>
+                      PDF 파일 업로드
+                    </div>
+                    <div style={{color: '#666', fontSize: '0.9rem'}}>
+                      클릭하거나 드래그하여 파일을 선택하세요
+                      <br />
+                      <span style={{fontSize: '0.8rem'}}>(최대 10MB, PDF만 가능)</span>
+                    </div>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {/* 문서 목록 */}
+            {showDocuments && (
+              <div className={styles.documentList}>
+                <h3 style={{marginBottom: '1rem'}}>업로드된 문서 목록 ({documents.length}개)</h3>
+                {documents.length === 0 ? (
+                  <div style={{padding: '2rem', textAlign: 'center', color: '#999'}}>
+                    업로드된 문서가 없습니다.
+                  </div>
+                ) : (
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                    {documents.map((doc, index) => (
+                      <div key={index} className={styles.documentItem}>
+                        <div style={{flex: 1}}>
+                          <h4 style={{marginBottom: '0.5rem'}}>{doc.fileName}</h4>
+                          <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.9rem', color: '#666'}}>
+                            <span>📄 {doc.totalChunks}개 청크</span>
+                            <span>📅 {new Date(doc.firstUploaded).toLocaleDateString('ko-KR')}</span>
+                            {doc.tags.length > 0 && (
+                              <span>🏷️ {doc.tags.slice(0, 3).join(', ')}</span>
+                            )}
+                          </div>
+                          {doc.chunks.length > 0 && (
+                            <div style={{
+                              marginTop: '0.5rem',
+                              padding: '0.5rem',
+                              background: '#f5f5f5',
+                              borderRadius: '4px',
+                              fontSize: '0.85rem',
+                              color: '#666'
+                            }}>
+                              <strong>미리보기:</strong> {doc.chunks[0].content}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                          {doc.chunks.map((chunk) => (
+                            <button
+                              key={chunk.id}
+                              onClick={() => handleDeleteDocument(chunk.id, doc.fileName)}
+                              className={styles.deleteButton}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                background: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
+                              }}
+                            >
+                              삭제
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
