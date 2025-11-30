@@ -161,6 +161,10 @@ export async function generateChatbotResponse(
     }
     
     // Gemini 모델 초기화 (System Instructions 설정)
+    // 프롬프트가 실제로 전달되는지 확인
+    console.log('🔧 [Gemini Pro] System Instruction 설정 중...');
+    console.log('🔧 [Gemini Pro] System Instruction 프롬프트 길이:', prompt.length, '자');
+    
     const model = genAI.getGenerativeModel({ 
       model: 'gemini-pro',
       systemInstruction: {
@@ -170,6 +174,7 @@ export async function generateChatbotResponse(
     });
     
     console.log('✅ [Gemini Pro] 모델 초기화 완료: gemini-pro');
+    console.log('✅ [Gemini Pro] System Instruction이 프롬프트로 설정되었습니다.');
 
     // 대화 기록을 Gemini 형식으로 변환
     const chatHistory = conversationHistory.slice(-6).map(msg => ({
@@ -204,6 +209,8 @@ export async function generateChatbotResponse(
 
     console.log('📤 [Gemini Pro] Gemini API에 메시지 전송:', enhancedMessage.substring(0, 100) + '...');
     
+    console.log('📤 [Gemini Pro] Gemini API에 메시지 전송:', enhancedMessage.substring(0, 100) + '...');
+    
     const result = await chat.sendMessage(enhancedMessage);
     const response = result.response.text();
     
@@ -214,6 +221,9 @@ export async function generateChatbotResponse(
     // Gemini 사용 확인 로그
     console.log('✅ [Gemini Pro] API 응답 수신 완료');
     console.log('📤 [Gemini Pro] 원본 답변 길이:', response.length, '자');
+    console.log('📤 [Gemini Pro] 원본 답변 전체:', response);
+    console.log('📤 [Gemini Pro] 답변에 "라미네이팅" 포함 여부:', response.includes('라미네이팅') ? '✅ 포함됨' : '❌ 포함되지 않음');
+    console.log('📤 [Gemini Pro] 답변에 "기본 단가" 포함 여부:', response.includes('기본 단가') ? '✅ 포함됨' : '❌ 포함되지 않음');
     console.log('📤 [Gemini Pro] 원본 답변 전체:', response);
     console.log('📤 [Gemini Pro] 답변에 "라미네이팅" 포함 여부:', response.includes('라미네이팅') ? '✅ 포함됨' : '❌ 포함되지 않음');
     console.log('📤 [Gemini Pro] 답변에 "기본 단가" 포함 여부:', response.includes('기본 단가') ? '✅ 포함됨' : '❌ 포함되지 않음');
