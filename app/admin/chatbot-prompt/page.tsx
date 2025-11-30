@@ -39,15 +39,29 @@ export default function ChatbotPromptPage() {
     fetchPrompt();
   }, []);
 
-  // textarea 높이 자동 조정
+  // textarea 높이 자동 조정 (스크롤 위치 유지)
   useEffect(() => {
     const textarea = document.querySelector(`.${styles.promptTextarea}`) as HTMLTextAreaElement;
     if (textarea && promptData.quotePrompt) {
+      // 현재 스크롤 위치 및 커서 위치 저장
+      const scrollTop = textarea.scrollTop;
+      const selectionStart = textarea.selectionStart;
+      const selectionEnd = textarea.selectionEnd;
+      
       // 약간의 지연을 두고 높이 조정 (렌더링 완료 후)
       setTimeout(() => {
         textarea.style.height = 'auto';
         const newHeight = Math.max(800, textarea.scrollHeight + 100);
         textarea.style.height = `${newHeight}px`;
+        
+        // 스크롤 위치 및 커서 위치 복원 (requestAnimationFrame 사용)
+        requestAnimationFrame(() => {
+          textarea.scrollTop = scrollTop;
+          if (selectionStart !== null && selectionEnd !== null) {
+            textarea.setSelectionRange(selectionStart, selectionEnd);
+          }
+        });
+        
         console.log('📏 textarea 높이 조정:', newHeight, 'px, 내용 길이:', promptData.quotePrompt.length);
       }, 100);
     }
@@ -264,8 +278,20 @@ export default function ChatbotPromptPage() {
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
+                // 현재 스크롤 위치 및 커서 위치 저장
+                const scrollTop = target.scrollTop;
+                const selectionStart = target.selectionStart;
+                const selectionEnd = target.selectionEnd;
+                
+                // 높이 조정
                 target.style.height = 'auto';
                 target.style.height = `${Math.max(800, target.scrollHeight + 50)}px`;
+                
+                // 스크롤 위치 및 커서 위치 복원 (다음 프레임에서 실행하여 높이 조정 후 복원)
+                requestAnimationFrame(() => {
+                  target.scrollTop = scrollTop;
+                  target.setSelectionRange(selectionStart, selectionEnd);
+                });
               }}
             />
 
