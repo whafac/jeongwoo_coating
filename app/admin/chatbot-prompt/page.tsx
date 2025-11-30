@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './prompt.module.css';
 
@@ -18,6 +18,8 @@ export default function ChatbotPromptPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleLogout = async () => {
     if (confirm('로그아웃 하시겠습니까?')) {
@@ -39,9 +41,12 @@ export default function ChatbotPromptPage() {
     fetchPrompt();
   }, []);
 
-  // textarea 높이 자동 조정 (스크롤 위치 유지)
+  // textarea 높이 자동 조정 (스크롤 위치 유지) - 편집 모드일 때만
   useEffect(() => {
-    const textarea = document.querySelector(`.${styles.promptTextarea}`) as HTMLTextAreaElement;
+    if (!isEditing || !textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    // 편집 모드가 아닐 때는 높이 조정하지 않음
     if (textarea && promptData.quotePrompt) {
       // 현재 스크롤 위치 및 커서 위치 저장
       const scrollTop = textarea.scrollTop;
@@ -49,23 +54,29 @@ export default function ChatbotPromptPage() {
       const selectionEnd = textarea.selectionEnd;
       
       // 약간의 지연을 두고 높이 조정 (렌더링 완료 후)
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         textarea.style.height = 'auto';
         const newHeight = Math.max(800, textarea.scrollHeight + 100);
         textarea.style.height = `${newHeight}px`;
         
-        // 스크롤 위치 및 커서 위치 복원 (requestAnimationFrame 사용)
+        // 스크롤 위치 및 커서 위치 복원 (여러 프레임에 걸쳐 복원)
         requestAnimationFrame(() => {
           textarea.scrollTop = scrollTop;
           if (selectionStart !== null && selectionEnd !== null) {
             textarea.setSelectionRange(selectionStart, selectionEnd);
           }
+          // 한 번 더 확인하여 확실히 복원
+          requestAnimationFrame(() => {
+            if (Math.abs(textarea.scrollTop - scrollTop) > 1) {
+              textarea.scrollTop = scrollTop;
+            }
+          });
         });
-        
-        console.log('📏 textarea 높이 조정:', newHeight, 'px, 내용 길이:', promptData.quotePrompt.length);
-      }, 100);
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [promptData.quotePrompt]);
+  }, [promptData.quotePrompt, isEditing]);
 
   const fetchPrompt = async () => {
     try {
@@ -155,6 +166,7 @@ export default function ChatbotPromptPage() {
           ...prev,
           lastUpdated: new Date().toISOString()
         }));
+        setIsEditing(false); // 저장 후 편집 모드 종료
         setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage('❌ 저장 중 오류가 발생했습니다: ' + (result.error || '알 수 없는 오류'));
@@ -175,7 +187,74 @@ export default function ChatbotPromptPage() {
         isDefault: true
       });
       setMessage('✅ 프롬프트가 초기화되었습니다. 새로운 내용을 입력하고 저장하세요.');
+      setIsEditing(false);
     }
+  };
+
+  const handleToggleEdit = () => {
+    setIsEditing(!isEditing);
+    if (!isEditing && textareaRef.current) {
+      // 편집 모드로 전환 시 textarea에 포커스
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const target = e.target;
+    // 현재 스크롤 위치 및 커서 위치 저장
+    const scrollTop = target.scrollTop;
+    const selectionStart = target.selectionStart;
+    const selectionEnd = target.selectionEnd;
+    
+    // 값 업데이트
+    setPromptData(prev => ({ ...prev, quotePrompt: target.value }));
+    
+    // 높이 조정 및 스크롤 위치 복원
+    requestAnimationFrame(() => {
+      target.style.height = 'auto';
+      const newHeight = Math.max(800, target.scrollHeight + 50);
+      target.style.height = `${newHeight}px`;
+      
+      // 스크롤 위치 복원
+      requestAnimationFrame(() => {
+        target.scrollTop = scrollTop;
+        target.setSelectionRange(selectionStart, selectionEnd);
+        // 한 번 더 확인
+        requestAnimationFrame(() => {
+          if (Math.abs(target.scrollTop - scrollTop) > 1) {
+            target.scrollTop = scrollTop;
+          }
+        });
+      });
+    });
+  };
+
+  const handleTextareaInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget;
+    // 현재 스크롤 위치 및 커서 위치 저장
+    const scrollTop = target.scrollTop;
+    const selectionStart = target.selectionStart;
+    const selectionEnd = target.selectionEnd;
+    
+    // 높이 조정
+    target.style.height = 'auto';
+    const newHeight = Math.max(800, target.scrollHeight + 50);
+    target.style.height = `${newHeight}px`;
+    
+    // 스크롤 위치 및 커서 위치 복원
+    requestAnimationFrame(() => {
+      target.scrollTop = scrollTop;
+      target.setSelectionRange(selectionStart, selectionEnd);
+      // 한 번 더 확인하여 확실히 복원
+      requestAnimationFrame(() => {
+        if (Math.abs(target.scrollTop - scrollTop) > 1) {
+          target.scrollTop = scrollTop;
+          target.setSelectionRange(selectionStart, selectionEnd);
+        }
+      });
+    });
   };
 
   if (loading) {
@@ -231,20 +310,39 @@ export default function ChatbotPromptPage() {
             <div className={styles.editorHeader}>
               <h2>현재 DB 프롬프트</h2>
               <div className={styles.editorActions}>
-                <button 
-                  onClick={handleReset}
-                  className={styles.resetButton}
-                  disabled={saving}
-                >
-                  초기화
-                </button>
-                <button 
-                  onClick={handleSave}
-                  className={styles.saveButton}
-                  disabled={saving}
-                >
-                  {saving ? '저장 중...' : '저장하기'}
-                </button>
+                {!isEditing ? (
+                  <button 
+                    onClick={handleToggleEdit}
+                    className={styles.editButton}
+                    disabled={saving}
+                  >
+                    ✏️ 프롬프트 수정
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={handleToggleEdit}
+                      className={styles.cancelButton}
+                      disabled={saving}
+                    >
+                      취소
+                    </button>
+                    <button 
+                      onClick={handleReset}
+                      className={styles.resetButton}
+                      disabled={saving}
+                    >
+                      초기화
+                    </button>
+                    <button 
+                      onClick={handleSave}
+                      className={styles.saveButton}
+                      disabled={saving}
+                    >
+                      {saving ? '저장 중...' : '저장하기'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -268,30 +366,18 @@ export default function ChatbotPromptPage() {
             </div>
 
             <textarea
+              ref={textareaRef}
               value={promptData.quotePrompt}
-              onChange={(e) => setPromptData(prev => ({ ...prev, quotePrompt: e.target.value }))}
+              onChange={handleTextareaChange}
+              onInput={handleTextareaInput}
               className={styles.promptTextarea}
               placeholder="챗봇 프롬프트를 입력하세요. 회사 정보, 견적 기준, 서비스 상세, 연락처, 파일 제출 방법, 납기일 등 모든 정보를 여기에 작성해주세요."
+              readOnly={!isEditing}
               style={{ 
                 height: 'auto',
-                minHeight: '800px'
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                // 현재 스크롤 위치 및 커서 위치 저장
-                const scrollTop = target.scrollTop;
-                const selectionStart = target.selectionStart;
-                const selectionEnd = target.selectionEnd;
-                
-                // 높이 조정
-                target.style.height = 'auto';
-                target.style.height = `${Math.max(800, target.scrollHeight + 50)}px`;
-                
-                // 스크롤 위치 및 커서 위치 복원 (다음 프레임에서 실행하여 높이 조정 후 복원)
-                requestAnimationFrame(() => {
-                  target.scrollTop = scrollTop;
-                  target.setSelectionRange(selectionStart, selectionEnd);
-                });
+                minHeight: '800px',
+                cursor: isEditing ? 'text' : 'default',
+                backgroundColor: isEditing ? 'white' : '#f9f9f9'
               }}
             />
 
